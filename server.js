@@ -27,6 +27,7 @@ import {
   clearAuthCookie,
   requireAuth,
 } from './lib/auth.js';
+import { sealJobId, sealFileId, openJobToken, openFileToken } from './lib/convert-tokens.js';
 import {
   hasActiveSubscription,
   getSubscriptionSummary,
@@ -453,24 +454,31 @@ app.post('/api/convert/server', upload.single('file'), async (req, res) => {
       body: form,
     });
     const job = await jobRes.json();
-    res.json({ jobId: job.id });
+    res.json({ jobToken: sealJobId(job.id) });
   } catch (err) {
     console.error('Zamzar upload error:', err);
     res.status(500).json({ error: err.message || 'Conversion failed to start' });
   }
 });
 
-app.get('/api/convert/status/:jobId', async (req, res) => {
+app.get('/api/convert/status/:token', async (req, res) => {
   if (!ZAMZAR_API_KEY) {
     return res.status(503).json({ error: 'Zamzar API not configured' });
   }
 
+  let jobId;
   try {
-    const jobRes = await zamzarFetch(`${ZAMZAR_API_BASE}/jobs/${req.params.jobId}`);
+    jobId = openJobToken(req.params.token);
+  } catch (err) {
+    return res.status(400).json({ error: err.message || 'Invalid job token' });
+  }
+
+  try {
+    const jobRes = await zamzarFetch(`${ZAMZAR_API_BASE}/jobs/${jobId}`);
     const job = await jobRes.json();
 
     if (job.status === 'successful' && job.target_files?.length) {
-      return res.json({ status: 'successful', fileId: job.target_files[0].id });
+      return res.json({ status: 'successful', fileToken: sealFileId(job.target_files[0].id) });
     }
     if (job.status === 'failed') {
       return res.json({ status: 'failed', error: job.failure?.message || 'Conversion failed' });
@@ -482,14 +490,21 @@ app.get('/api/convert/status/:jobId', async (req, res) => {
   }
 });
 
-app.get('/api/convert/download/:fileId', async (req, res) => {
+app.get('/api/convert/download/:token', async (req, res) => {
   if (!ZAMZAR_API_KEY) {
     return res.status(503).json({ error: 'Zamzar API not configured' });
   }
 
+  let fileId;
+  try {
+    fileId = openFileToken(req.params.token);
+  } catch (err) {
+    return res.status(400).json({ error: err.message || 'Invalid file token' });
+  }
+
   try {
     const fileRes = await zamzarFetch(
-      `${ZAMZAR_API_BASE}/files/${req.params.fileId}/content`
+      `${ZAMZAR_API_BASE}/files/${fileId}/content`
     );
     const buffer = Buffer.from(await fileRes.arrayBuffer());
     res.setHeader('Content-Type', 'audio/mpeg');

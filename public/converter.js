@@ -644,18 +644,18 @@ async function convertServer(item, onProgress) {
     const err = await startRes.json().catch(() => ({}));
     throw new Error(err.error || 'Server conversion failed to start');
   }
-  const { jobId } = await startRes.json();
+  const { jobToken } = await startRes.json();
   onProgress(15);
 
-  let fileId = null;
+  let fileToken = null;
   for (let attempt = 0; attempt < 120; attempt++) {
     await new Promise((r) => setTimeout(r, 2000));
-    const statusRes = await fetch(`/api/convert/status/${jobId}`);
+    const statusRes = await fetch(`/api/convert/status/${encodeURIComponent(jobToken)}`);
     if (!statusRes.ok) throw new Error('Failed to check conversion status');
     const status = await statusRes.json();
 
     if (status.status === 'successful') {
-      fileId = status.fileId;
+      fileToken = status.fileToken;
       break;
     }
     if (status.status === 'failed') {
@@ -664,10 +664,10 @@ async function convertServer(item, onProgress) {
     onProgress(Math.min(85, 15 + attempt * 2));
   }
 
-  if (!fileId) throw new Error('Conversion timed out');
+  if (!fileToken) throw new Error('Conversion timed out');
 
   onProgress(90);
-  const dlRes = await fetch(`/api/convert/download/${fileId}`);
+  const dlRes = await fetch(`/api/convert/download/${encodeURIComponent(fileToken)}`);
   if (!dlRes.ok) throw new Error('Failed to download converted file');
   const blob = await dlRes.blob();
   onProgress(100);
