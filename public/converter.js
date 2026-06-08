@@ -648,7 +648,7 @@ async function convertServer(item, onProgress) {
   onProgress(15);
 
   let fileToken = null;
-  for (let attempt = 0; attempt < 120; attempt++) {
+  for (let attempt = 0; attempt < 300; attempt++) {
     await new Promise((r) => setTimeout(r, 2000));
     const statusRes = await fetch(`/api/convert/status/${encodeURIComponent(jobToken)}`);
     if (!statusRes.ok) throw new Error('Failed to check conversion status');

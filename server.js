@@ -69,6 +69,8 @@ function zamzarAuth() {
   return 'Basic ' + Buffer.from(`${ZAMZAR_API_KEY}:`).toString('base64');
 }
 
+const JOB_TIMEOUT_MS = 10 * 60 * 1000;
+
 async function zamzarFetch(url, options = {}) {
   const headers = { Authorization: zamzarAuth(), ...options.headers };
   const res = await fetch(url, { ...options, headers });
@@ -77,6 +79,13 @@ async function zamzarFetch(url, options = {}) {
     throw new Error(`Zamzar error ${res.status}: ${body}`);
   }
   return res;
+}
+
+function isZamzarJobTimedOut(createdAt) {
+  if (!createdAt) return false;
+  const started = Date.parse(createdAt);
+  if (Number.isNaN(started)) return false;
+  return Date.now() - started > JOB_TIMEOUT_MS;
 }
 
 function publicUser(user) {
@@ -482,6 +491,9 @@ app.get('/api/convert/status/:token', async (req, res) => {
     }
     if (job.status === 'failed') {
       return res.json({ status: 'failed', error: job.failure?.message || 'Conversion failed' });
+    }
+    if (isZamzarJobTimedOut(job.created_at)) {
+      return res.json({ status: 'failed', error: 'Conversion timed out after 10 minutes' });
     }
     res.json({ status: job.status || 'processing' });
   } catch (err) {
