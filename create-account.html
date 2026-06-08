@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create your account — WAVtoMP3.io</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/auth-pages.css">
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a href="/" class="brand">
+      <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
+      WAVtoMP3<span class="io">.io</span>
+    </a>
+    <a href="/login.html" class="nav-link">Already have an account?</a>
+  </div>
+</nav>
+
+<main class="wrap panel">
+  <div class="eyebrow">Payment successful</div>
+  <h1>Create your account</h1>
+  <p class="lead" id="lead">One last step — set a password so you can log in anytime, manage your subscription, and download invoices.</p>
+
+  <div class="card">
+    <div class="success-banner" id="paidBanner" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+      <span><strong>You're subscribed.</strong> Create your account to unlock unlimited conversions on any device.</span>
+    </div>
+
+    <div class="err" id="error" hidden></div>
+
+    <form id="form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com">
+        <div class="hint">Use the same email you paid with at checkout.</div>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+      </div>
+      <div class="field">
+        <label for="password2">Confirm password</label>
+        <input type="password" id="password2" name="password2" required minlength="8" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn" id="submitBtn">Create account &amp; start converting</button>
+    </form>
+
+    <p class="alt">Already created an account? <a href="/login.html">Log in</a></p>
+  </div>
+</main>
+
+<script type="module">
+import { showError, setLoading } from '/public/auth.js';
+
+const params = new URLSearchParams(window.location.search);
+const sessionId = params.get('session_id');
+const errorEl = document.getElementById('error');
+const form = document.getElementById('form');
+const emailInput = document.getElementById('email');
+const submitBtn = document.getElementById('submitBtn');
+const paidBanner = document.getElementById('paidBanner');
+
+async function init() {
+  const me = await fetch('/api/auth/me', { credentials: 'include' }).then((r) => r.json());
+  if (me?.user) {
+    window.location.href = '/account.html';
+    return;
+  }
+
+  if (sessionId) {
+    try {
+      const res = await fetch(`/api/checkout-session?session_id=${encodeURIComponent(sessionId)}`);
+      const data = await res.json();
+
+      if (data.alreadyRegistered) {
+        showError(errorEl, 'This subscription is already linked to an account. Log in to access your files.');
+        submitBtn.disabled = true;
+        const loginLink = document.querySelector('.alt a');
+        if (loginLink) loginLink.href = '/login.html?next=' + encodeURIComponent('/?restore=1');
+        return;
+      }
+
+      if (data.valid) {
+        paidBanner.hidden = false;
+        if (data.email) emailInput.value = data.email;
+      } else if (data.error) {
+        showError(errorEl, data.error);
+      }
+    } catch {
+      showError(errorEl, 'Could not verify your payment. You can still register with the email you used at checkout.');
+    }
+  } else {
+    document.getElementById('lead').innerHTML =
+      'Already paid? Enter the <b>same email you used at checkout</b> and choose a password.';
+  }
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  showError(errorEl, '');
+
+  const email = emailInput.value.trim();
+  const password = document.getElementById('password').value;
+  const password2 = document.getElementById('password2').value;
+
+  if (password !== password2) {
+    showError(errorEl, 'Passwords do not match.');
+    return;
+  }
+
+  setLoading(submitBtn, true);
+
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password, sessionId: sessionId || undefined }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError(errorEl, data.error || 'Could not create account');
+      setLoading(submitBtn, false, 'Create account & start converting');
+      return;
+    }
+
+    window.location.href = '/?welcome=1&restore=1';
+  } catch {
+    showError(errorEl, 'Something went wrong. Please try again.');
+    setLoading(submitBtn, false, 'Create account & start converting');
+  }
+});
+
+init();
+</script>
+</body>
+</html>

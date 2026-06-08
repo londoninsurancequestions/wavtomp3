@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My files — WAVtoMP3.io</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/auth-pages.css">
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a href="/" class="brand">
+      <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
+      WAVtoMP3<span class="io">.io</span>
+    </a>
+    <div style="display:flex;gap:22px;align-items:center">
+      <a href="/account.html" class="nav-link">Account</a>
+      <a href="/" class="nav-link">Converter</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap panel wide">
+  <div class="top-actions">
+    <div>
+      <div class="eyebrow">Library</div>
+      <h1>My files</h1>
+      <p class="lead">Every conversion you've saved while logged in — download again anytime, or remove files you no longer need.</p>
+    </div>
+    <a href="/" class="btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">Convert more</a>
+  </div>
+
+  <div class="inv-card" style="margin-top:28px">
+    <div id="filesList"><p class="empty">Loading your files…</p></div>
+  </div>
+</main>
+
+<script type="module" src="/public/my-files.js"></script>
+</body>
+</html>

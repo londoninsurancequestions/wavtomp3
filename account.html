@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your account — WAVtoMP3.io</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/public/auth-pages.css">
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a href="/" class="brand">
+      <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
+      WAVtoMP3<span class="io">.io</span>
+    </a>
+    <div style="display:flex;gap:22px;align-items:center">
+      <a href="/my-files.html" class="nav-link">My files</a>
+      <a href="/" class="nav-link">Converter</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap panel wide">
+  <div class="top-actions">
+    <div>
+      <div class="eyebrow">Account</div>
+      <h1 id="greeting">Your account</h1>
+      <p class="lead" id="emailLine"></p>
+    </div>
+    <button type="button" class="btn-ghost" id="logoutBtn">Log out</button>
+  </div>
+
+  <div class="account-grid">
+    <div class="stat-card">
+      <h2>Subscription</h2>
+      <div id="subscription">
+        <div class="stat-row"><span class="lab">Status</span><span class="val" id="subStatus">—</span></div>
+        <div class="stat-row"><span class="lab">Plan</span><span class="val" id="subPlan">—</span></div>
+        <div class="stat-row"><span class="lab">Renews</span><span class="val" id="subRenews">—</span></div>
+      </div>
+      <p class="hint" style="margin-top:14px;font-size:12px;color:var(--faint)">Cancel anytime from your Stripe customer portal or contact support.</p>
+    </div>
+
+    <div class="stat-card">
+      <h2>Password</h2>
+      <form id="passwordForm" class="password-form" novalidate>
+        <div class="field">
+          <label for="currentPassword">Current password</label>
+          <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+          <label for="newPassword">New password</label>
+          <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="field">
+          <label for="confirmPassword">Confirm new password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" minlength="8" required>
+        </div>
+        <p class="err" id="passwordErr" hidden></p>
+        <p class="ok" id="passwordOk" hidden></p>
+        <button type="submit" class="btn" id="passwordBtn">Update password</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="inv-card" style="margin-top:20px">
+    <h2>Invoices</h2>
+    <div id="invoices"><p class="empty">Loading invoices…</p></div>
+  </div>
+</main>
+
+<script type="module">
+import {
+  requireAuth,
+  renderInvoices,
+  formatMoney,
+  formatDate,
+  logout,
+} from '/public/auth.js';
+
+const greeting = document.getElementById('greeting');
+const emailLine = document.getElementById('emailLine');
+const subStatus = document.getElementById('subStatus');
+const subPlan = document.getElementById('subPlan');
+const subRenews = document.getElementById('subRenews');
+const invoicesEl = document.getElementById('invoices');
+
+document.getElementById('logoutBtn').addEventListener('click', logout);
+
+const passwordForm = document.getElementById('passwordForm');
+const passwordErr = document.getElementById('passwordErr');
+const passwordOk = document.getElementById('passwordOk');
+const passwordBtn = document.getElementById('passwordBtn');
+
+passwordForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  passwordErr.hidden = true;
+  passwordOk.hidden = true;
+
+  const currentPassword = document.getElementById('currentPassword').value;
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+
+  if (newPassword.length < 8) {
+    passwordErr.textContent = 'Password must be at least 8 characters.';
+    passwordErr.hidden = false;
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    passwordErr.textContent = 'New passwords do not match.';
+    passwordErr.hidden = false;
+    return;
+  }
+
+  passwordBtn.disabled = true;
+  passwordBtn.textContent = 'Updating…';
+
+  try {
+    const res = await fetch('/api/account/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not update password');
+
+    passwordForm.reset();
+    passwordOk.textContent = 'Password updated successfully.';
+    passwordOk.hidden = false;
+  } catch (err) {
+    passwordErr.textContent = err.message;
+    passwordErr.hidden = false;
+  } finally {
+    passwordBtn.disabled = false;
+    passwordBtn.textContent = 'Update password';
+  }
+});
+
+async function init() {
+  const me = await requireAuth();
+  if (!me) return;
+
+  greeting.textContent = 'Welcome back';
+  emailLine.textContent = me.user.email;
+
+  const sub = me.subscription;
+  if (sub?.active) {
+    subStatus.innerHTML = '<span class="badge active">Active</span>';
+    subPlan.textContent = sub.plan + (sub.amount ? ` · ${formatMoney(sub.amount * 100, sub.currency)}` : '');
+    subRenews.textContent = sub.currentPeriodEnd
+      ? formatDate(sub.currentPeriodEnd) + (sub.cancelAtPeriodEnd ? ' (cancels after)' : '')
+      : '—';
+  } else {
+    subStatus.innerHTML = '<span class="badge inactive">Inactive</span>';
+    subPlan.textContent = '—';
+    subRenews.textContent = '—';
+  }
+
+  try {
+    const res = await fetch('/api/account/invoices', { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    renderInvoices(invoicesEl, data.invoices);
+  } catch {
+    invoicesEl.innerHTML = '<p class="empty">Could not load invoices. Try again later.</p>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
