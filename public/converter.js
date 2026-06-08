@@ -634,6 +634,9 @@ async function convertLocal(item, opts, onProgress) {
 }
 
 /* ---------- Zamzar server conversion ---------- */
+const backOffIntervals = [5, 5, 10, 20, 30];
+const MAX_POLL_FAILURES = 5;
+
 async function convertServer(item, onProgress) {
   onProgress(5);
   const form = new FormData();
@@ -648,11 +651,27 @@ async function convertServer(item, onProgress) {
   onProgress(15);
 
   let fileToken = null;
-  for (let attempt = 0; attempt < 300; attempt++) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const statusRes = await fetch(`/api/convert/status/${encodeURIComponent(jobToken)}`);
-    if (!statusRes.ok) throw new Error('Failed to check conversion status');
-    const status = await statusRes.json();
+  let pollFailures = 0;
+  let attempt = 0;
+
+  while (!fileToken) {
+    const waitSec = backOffIntervals[Math.min(attempt, backOffIntervals.length - 1)];
+    await new Promise((r) => setTimeout(r, waitSec * 1000));
+
+    let status;
+    try {
+      const statusRes = await fetch(`/api/convert/status/${encodeURIComponent(jobToken)}`);
+      if (!statusRes.ok) throw new Error('Status request failed');
+      status = await statusRes.json();
+    } catch {
+      pollFailures += 1;
+      if (pollFailures >= MAX_POLL_FAILURES) {
+        throw new Error('Failed to check conversion status after multiple attempts');
+      }
+      continue;
+    }
+
+    pollFailures = 0;
 
     if (status.status === 'successful') {
       fileToken = status.fileToken;
@@ -661,10 +680,10 @@ async function convertServer(item, onProgress) {
     if (status.status === 'failed') {
       throw new Error(status.error || 'Server conversion failed');
     }
-    onProgress(Math.min(85, 15 + attempt * 2));
-  }
 
-  if (!fileToken) throw new Error('Conversion timed out');
+    onProgress(Math.min(85, 15 + attempt * 2));
+    attempt += 1;
+  }
 
   onProgress(90);
   const dlRes = await fetch(`/api/convert/download/${encodeURIComponent(fileToken)}`);
