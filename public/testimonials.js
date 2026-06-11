@@ -1,5 +1,3 @@
-const STAR_PATH = 'M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z';
-
 export const TESTIMONIALS = [
   {
     quote:
@@ -102,11 +100,6 @@ export const TESTIMONIALS = [
   },
 ];
 
-export function starsHtml(count = 5) {
-  const star = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="${STAR_PATH}"/></svg>`;
-  return `<div class="stars">${star.repeat(count)}</div>`;
-}
-
 export function testimonialCardHtml(t) {
   const avatarClass = t.avatar && t.avatar !== 'm1' ? ` ${t.avatar}` : '';
   return `<div class="tst">
@@ -116,7 +109,6 @@ export function testimonialCardHtml(t) {
         <div class="av${avatarClass}">${t.initials}</div>
         <div><div class="nm">${t.name}</div><div class="rl">${t.role}</div></div>
       </div>
-      ${starsHtml()}
     </div>`;
 }
 
