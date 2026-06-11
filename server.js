@@ -17,6 +17,7 @@ import {
   updateUserPassword,
   markCheckoutSessionUsed,
   isCheckoutSessionUsed,
+  countUsers,
 } from './lib/db.js';
 import {
   hashPassword,
@@ -57,13 +58,25 @@ import {
   isAdminEmail,
   requireAdmin,
   listUsers,
-  countUsers,
   deleteUserAccount,
 } from './lib/admin.js';
+import { initStore, getHealthInfo } from './lib/store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3002;
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+const BASE_URL = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+
+/** Public site URL for Stripe redirects — prefer the domain the user is actually on. */
+function getPublicBaseUrl(req) {
+  if (req) {
+    const host = (req.get('x-forwarded-host') || req.get('host') || '').split(',')[0].trim();
+    const proto = (req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http'))
+      .split(',')[0]
+      .trim();
+    if (host) return `${proto}://${host}`;
+  }
+  return BASE_URL;
+}
 const ZAMZAR_API_KEY = process.env.ZAMZAR_API_KEY;
 const ZAMZAR_API_BASE = process.env.ZAMZAR_API_BASE || 'https://api.zamzar.com/v1';
 
@@ -82,6 +95,7 @@ const libraryUpload = multer({
 });
 
 const app = express();
+app.set('trust proxy', 1);
 
 function zamzarAuth() {
   return 'Basic ' + Buffer.from(`${ZAMZAR_API_KEY}:`).toString('base64');
@@ -150,7 +164,7 @@ app.get('/api/checkout-session', async (req, res) => {
   if (!sessionId) return res.status(400).json({ error: 'Missing session_id' });
 
   try {
-    if (isCheckoutSessionUsed(sessionId)) {
+    if (await isCheckoutSessionUsed(sessionId)) {
       return res.json({ valid: false, alreadyRegistered: true });
     }
 
@@ -159,7 +173,7 @@ app.get('/api/checkout-session', async (req, res) => {
       return res.json({ valid: false, error: checkout.error });
     }
 
-    const existing = findUserByStripeCustomerId(checkout.customerId);
+    const existing = await findUserByStripeCustomerId(checkout.customerId);
     if (existing) {
       return res.json({
         valid: false,
@@ -191,7 +205,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  if (findUserByEmail(normalizedEmail)) {
+  if (await findUserByEmail(normalizedEmail)) {
     return res.status(409).json({ error: 'An account with this email already exists. Try logging in.' });
   }
 
@@ -199,7 +213,7 @@ app.post('/api/auth/register', async (req, res) => {
     let customerId = null;
 
     if (sessionId) {
-      if (isCheckoutSessionUsed(sessionId)) {
+      if (await isCheckoutSessionUsed(sessionId)) {
         return res.status(409).json({ error: 'This payment has already been linked to an account. Try logging in.' });
       }
 
@@ -208,7 +222,7 @@ app.post('/api/auth/register', async (req, res) => {
         return res.status(400).json({ error: checkout.error });
       }
 
-      if (findUserByStripeCustomerId(checkout.customerId)) {
+      if (await findUserByStripeCustomerId(checkout.customerId)) {
         return res.status(409).json({ error: 'This subscription is already linked to an account. Try logging in.' });
       }
 
@@ -220,17 +234,17 @@ app.post('/api/auth/register', async (req, res) => {
           error: 'No active subscription found for this email. Complete checkout first, or use the link from your payment confirmation.',
         });
       }
-      if (findUserByStripeCustomerId(match.customerId)) {
+      if (await findUserByStripeCustomerId(match.customerId)) {
         return res.status(409).json({ error: 'This subscription is already linked to an account. Try logging in.' });
       }
       customerId = match.customerId;
     }
 
     const passwordHash = await hashPassword(password);
-    const user = createUser(normalizedEmail, passwordHash, customerId);
+    const user = await createUser(normalizedEmail, passwordHash, customerId);
 
     if (sessionId) {
-      markCheckoutSessionUsed(sessionId, user.id);
+      await markCheckoutSessionUsed(sessionId, user.id);
     }
 
     const token = signToken(user);
@@ -252,8 +266,23 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const user = findUserByEmail(email.trim());
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await findUserByEmail(normalizedEmail);
   if (!user) {
+    if (stripe) {
+      try {
+        const match = await findStripeCustomerByEmail(stripe, normalizedEmail);
+        if (match && !(await findUserByStripeCustomerId(match.customerId))) {
+          return res.status(401).json({
+            error:
+              'No account exists for this email yet, but you have an active subscription. Create your account using the same email you paid with.',
+            needsRegistration: true,
+          });
+        }
+      } catch (err) {
+        console.error('Stripe lookup during login:', err.message);
+      }
+    }
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
@@ -275,6 +304,70 @@ app.post('/api/auth/login', async (req, res) => {
   });
 });
 
+app.post('/api/auth/reset-password', async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
+
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and new password are required' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await findUserByEmail(normalizedEmail);
+
+  if (!user) {
+    try {
+      const match = await findStripeCustomerByEmail(stripe, normalizedEmail);
+      if (match && !(await findUserByStripeCustomerId(match.customerId))) {
+        return res.status(404).json({
+          error:
+            'No account exists for this email yet, but you have an active subscription. Create your account using the same email you paid with.',
+          needsRegistration: true,
+        });
+      }
+    } catch (err) {
+      console.error('Stripe lookup during password reset:', err.message);
+    }
+    return res.status(404).json({ error: 'No account found for this email.' });
+  }
+
+  try {
+    let subscriptionActive = false;
+
+    if (user.stripe_customer_id) {
+      subscriptionActive = await hasActiveSubscription(stripe, user.stripe_customer_id);
+    }
+    if (!subscriptionActive) {
+      const match = await findStripeCustomerByEmail(stripe, normalizedEmail);
+      subscriptionActive = !!match;
+    }
+
+    if (!subscriptionActive) {
+      return res.status(403).json({
+        error: 'No active subscription found for this email. Reset is only available for active subscribers.',
+      });
+    }
+
+    const passwordHash = await hashPassword(password);
+    await updateUserPassword(user.id, passwordHash);
+
+    const token = signToken(user);
+    setAuthCookie(res, token);
+
+    res.json({
+      ok: true,
+      user: publicUser(user),
+      subscriptionActive: true,
+    });
+  } catch (err) {
+    console.error('Password reset error:', err);
+    res.status(500).json({ error: 'Could not reset password' });
+  }
+});
+
 app.post('/api/auth/logout', (_req, res) => {
   clearAuthCookie(res);
   res.json({ ok: true });
@@ -290,7 +383,7 @@ app.get('/api/auth/me', async (req, res) => {
     return res.json({ user: null, subscriptionActive: false });
   }
 
-  const user = findUserById(payload.sub);
+  const user = await findUserById(payload.sub);
   if (!user) {
     clearAuthCookie(res);
     return res.json({ user: null, subscriptionActive: false });
@@ -324,7 +417,7 @@ app.post('/api/account/password', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'New password must be different from your current password' });
   }
 
-  const user = findUserAuthById(req.userId);
+  const user = await findUserAuthById(req.userId);
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
@@ -336,7 +429,7 @@ app.post('/api/account/password', requireAuth, async (req, res) => {
 
   try {
     const passwordHash = await hashPassword(newPassword);
-    updateUserPassword(req.userId, passwordHash);
+    await updateUserPassword(req.userId, passwordHash);
     res.json({ ok: true });
   } catch (err) {
     console.error('Password change error:', err);
@@ -347,7 +440,7 @@ app.post('/api/account/password', requireAuth, async (req, res) => {
 app.get('/api/account/invoices', requireAuth, async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
 
-  const user = findUserById(req.userId);
+  const user = await findUserById(req.userId);
   if (!user?.stripe_customer_id) {
     return res.json({ invoices: [] });
   }
@@ -364,7 +457,7 @@ app.get('/api/account/invoices', requireAuth, async (req, res) => {
 app.post('/api/account/cancel-subscription', requireAuth, async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
 
-  const user = findUserById(req.userId);
+  const user = await findUserById(req.userId);
   if (!user?.stripe_customer_id) {
     return res.status(400).json({ error: 'No subscription linked to this account' });
   }
@@ -382,7 +475,7 @@ app.post('/api/account/cancel-subscription', requireAuth, async (req, res) => {
 app.post('/api/account/reactivate-subscription', requireAuth, async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
 
-  const user = findUserById(req.userId);
+  const user = await findUserById(req.userId);
   if (!user?.stripe_customer_id) {
     return res.status(400).json({ error: 'No subscription linked to this account' });
   }
@@ -398,7 +491,7 @@ app.post('/api/account/reactivate-subscription', requireAuth, async (req, res) =
 });
 
 /* ---------- My files library ---------- */
-app.post('/api/files', requireAuth, libraryUpload.single('file'), (req, res) => {
+app.post('/api/files', requireAuth, libraryUpload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
@@ -414,7 +507,7 @@ app.post('/api/files', requireAuth, libraryUpload.single('file'), (req, res) => 
     const filePath = path.join(dir, filename);
     fs.writeFileSync(filePath, req.file.buffer);
 
-    const record = createConversion({
+    const record = await createConversion({
       userId: req.userId,
       originalName,
       outputName,
@@ -431,19 +524,19 @@ app.post('/api/files', requireAuth, libraryUpload.single('file'), (req, res) => 
   }
 });
 
-app.get('/api/files', requireAuth, (req, res) => {
-  res.json({ files: listConversions(req.userId) });
+app.get('/api/files', requireAuth, async (req, res) => {
+  res.json({ files: await listConversions(req.userId) });
 });
 
-app.post('/api/files/download-batch', requireAuth, (req, res) => {
+app.post('/api/files/download-batch', requireAuth, async (req, res) => {
   const ids = req.body?.ids;
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({ error: 'No files selected' });
   }
 
-  const files = ids
-    .map((id) => getConversion(req.userId, Number(id)))
-    .filter((f) => f?.filePath && fs.existsSync(f.filePath));
+  const files = (
+    await Promise.all(ids.map((id) => getConversion(req.userId, Number(id))))
+  ).filter((f) => f?.filePath && fs.existsSync(f.filePath));
 
   if (!files.length) {
     return res.status(410).json({ error: 'No available files to download' });
@@ -480,8 +573,8 @@ app.post('/api/files/download-batch', requireAuth, (req, res) => {
   archive.finalize();
 });
 
-app.get('/api/files/:id/download', requireAuth, (req, res) => {
-  const conv = getConversion(req.userId, Number(req.params.id));
+app.get('/api/files/:id/download', requireAuth, async (req, res) => {
+  const conv = await getConversion(req.userId, Number(req.params.id));
   if (!conv) {
     return res.status(404).json({ error: 'File not found' });
   }
@@ -491,8 +584,8 @@ app.get('/api/files/:id/download', requireAuth, (req, res) => {
   res.download(conv.filePath, conv.outputName);
 });
 
-app.delete('/api/files/:id', requireAuth, (req, res) => {
-  const ok = deleteConversion(req.userId, Number(req.params.id));
+app.delete('/api/files/:id', requireAuth, async (req, res) => {
+  const ok = await deleteConversion(req.userId, Number(req.params.id));
   if (!ok) {
     return res.status(404).json({ error: 'File not found' });
   }
@@ -622,13 +715,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
   const returnPath = safeReturnPath(returnTo);
   const returnQuery = encodeURIComponent(returnPath);
+  const siteUrl = getPublicBaseUrl(req);
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${BASE_URL}/create-account.html?session_id={CHECKOUT_SESSION_ID}&return_to=${returnQuery}`,
-      cancel_url: `${BASE_URL}${returnPath}${returnPath.includes('?') ? '&' : '?'}checkout=cancelled`,
+      success_url: `${siteUrl}/create-account.html?session_id={CHECKOUT_SESSION_ID}&return_to=${returnQuery}`,
+      cancel_url: `${siteUrl}${returnPath}${returnPath.includes('?') ? '&' : '?'}checkout=cancelled`,
       allow_promotion_codes: true,
     });
     res.json({ url: session.url });
@@ -654,7 +748,7 @@ app.get('/api/verify-checkout', async (req, res) => {
       return res.json({ active: false, error: checkout.error });
     }
 
-    const existing = findUserByStripeCustomerId(checkout.customerId);
+    const existing = await findUserByStripeCustomerId(checkout.customerId);
     res.json({
       active: checkout.active,
       customerId: checkout.customerId,
@@ -693,8 +787,12 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
+app.get('/api/health', async (_req, res) => {
+  res.json(await getHealthInfo());
+});
+
 /* ---------- Conversion analytics ---------- */
-app.post('/api/events/conversion', (req, res) => {
+app.post('/api/events/conversion', async (req, res) => {
   const { inputFormat, outputFormat, mode, fileSize, duration, savedToLibrary } = req.body || {};
   if (!inputFormat || !outputFormat || !mode) {
     return res.status(400).json({ error: 'inputFormat, outputFormat and mode are required' });
@@ -711,7 +809,7 @@ app.post('/api/events/conversion', (req, res) => {
   }
 
   try {
-    logConversionEvent({
+    await logConversionEvent({
       userId,
       inputFormat: String(inputFormat).toLowerCase().replace(/[^a-z0-9]/g, ''),
       outputFormat: String(outputFormat).toLowerCase().replace(/[^a-z0-9]/g, ''),
@@ -734,12 +832,12 @@ app.get('/api/admin/me', requireAuth, (req, res) => {
 
 app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
   try {
-    const conversions = getConversionOverview();
-    const formatStats = getGlobalFormatStats();
+    const conversions = await getConversionOverview();
+    const formatStats = await getGlobalFormatStats();
     let activeSubscriptions = 0;
 
     if (stripe) {
-      const users = listUsers({ limit: 500, offset: 0 }).users;
+      const users = (await listUsers({ limit: 500, offset: 0 })).users;
       const checks = await Promise.all(
         users
           .filter((u) => u.stripeCustomerId)
@@ -749,7 +847,7 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
     }
 
     res.json({
-      totalUsers: countUsers(),
+      totalUsers: await countUsers(),
       activeSubscriptions,
       conversions,
       topFormats: formatStats,
@@ -760,16 +858,16 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
   }
 });
 
-app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
   const search = req.query.q || '';
   const limit = Math.min(Number(req.query.limit) || 50, 100);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
-  res.json(listUsers({ search, limit, offset }));
+  res.json(await listUsers({ search, limit, offset }));
 });
 
 app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const userId = Number(req.params.id);
-  const user = findUserById(userId);
+  const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   try {
@@ -780,20 +878,21 @@ app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
       invoices = await listCustomerInvoices(stripe, user.stripe_customer_id);
     }
 
+    const formatStats = await getFormatStatsForUser(userId);
     res.json({
       user: publicUser(user),
       stripeCustomerId: user.stripe_customer_id,
       subscription,
       invoices,
-      conversionCount: countConversionEventsForUser(userId),
-      formatStats: getFormatStatsForUser(userId).map((row) => ({
+      conversionCount: await countConversionEventsForUser(userId),
+      formatStats: formatStats.map((row) => ({
         inputFormat: row.input_format,
         outputFormat: row.output_format,
         mode: row.mode,
-        count: row.count,
+        count: Number(row.count),
       })),
-      recentConversions: getRecentEventsForUser(userId),
-      libraryFiles: listConversions(userId),
+      recentConversions: await getRecentEventsForUser(userId),
+      libraryFiles: await listConversions(userId),
     });
   } catch (err) {
     console.error('Admin user detail error:', err);
@@ -804,14 +903,14 @@ app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
 app.post('/api/admin/users/:id/password', requireAuth, requireAdmin, async (req, res) => {
   const userId = Number(req.params.id);
   const { newPassword } = req.body || {};
-  if (!findUserById(userId)) return res.status(404).json({ error: 'User not found' });
+  if (!(await findUserById(userId))) return res.status(404).json({ error: 'User not found' });
   if (!newPassword || newPassword.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
   try {
     const passwordHash = await hashPassword(newPassword);
-    updateUserPassword(userId, passwordHash);
+    await updateUserPassword(userId, passwordHash);
     res.json({ ok: true });
   } catch (err) {
     console.error('Admin password reset error:', err);
@@ -822,7 +921,7 @@ app.post('/api/admin/users/:id/password', requireAuth, requireAdmin, async (req,
 app.post('/api/admin/users/:id/cancel-subscription', requireAuth, requireAdmin, async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
 
-  const user = findUserById(Number(req.params.id));
+  const user = await findUserById(Number(req.params.id));
   if (!user?.stripe_customer_id) {
     return res.status(400).json({ error: 'No subscription linked to this account' });
   }
@@ -843,7 +942,7 @@ app.post('/api/admin/users/:id/cancel-subscription', requireAuth, requireAdmin, 
 
 app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const userId = Number(req.params.id);
-  const user = findUserById(userId);
+  const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   if (userId === req.userId) {
@@ -854,7 +953,7 @@ app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =
     if (stripe && user.stripe_customer_id && req.body?.cancelStripe) {
       await cancelSubscriptionImmediately(stripe, user.stripe_customer_id).catch(() => {});
     }
-    const ok = deleteUserAccount(userId);
+    const ok = await deleteUserAccount(userId);
     if (!ok) return res.status(404).json({ error: 'User not found' });
     res.json({ ok: true });
   } catch (err) {
@@ -874,11 +973,11 @@ app.get('/api/admin/payments', requireAuth, requireAdmin, async (req, res) => {
       expand: ['data.customer'],
     });
 
-    res.json({
-      payments: invoices.data.map((inv) => {
+    const payments = await Promise.all(
+      invoices.data.map(async (inv) => {
         const customer = inv.customer;
         const customerId = typeof customer === 'string' ? customer : customer?.id;
-        const user = customerId ? findUserByStripeCustomerId(customerId) : null;
+        const user = customerId ? await findUserByStripeCustomerId(customerId) : null;
         return {
           id: inv.id,
           number: inv.number,
@@ -892,14 +991,21 @@ app.get('/api/admin/payments', requireAuth, requireAdmin, async (req, res) => {
           pdfUrl: inv.invoice_pdf,
           hostedUrl: inv.hosted_invoice_url,
         };
-      }),
-    });
+      })
+    );
+    res.json({ payments });
   } catch (err) {
     console.error('Admin payments error:', err);
     res.status(500).json({ error: 'Failed to load payments' });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`YouConvert server running at ${BASE_URL}`);
-});
+try {
+  await initStore();
+  app.listen(PORT, () => {
+    console.log(`YouConvert server running at ${BASE_URL}`);
+  });
+} catch (err) {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+}

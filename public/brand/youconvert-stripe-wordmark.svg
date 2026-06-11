@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" role="img" aria-label="YouConvert">
+  <rect width="640" height="160" rx="24" fill="#0b0a08"/>
+  <g fill="#ff6a2b">
+    <rect x="40" y="88" width="14" height="48" rx="7"/>
+    <rect x="62" y="44" width="14" height="92" rx="7" fill="#ffb13b"/>
+    <rect x="84" y="68" width="14" height="68" rx="7"/>
+    <rect x="106" y="24" width="14" height="112" rx="7" fill="#ffb13b"/>
+    <rect x="128" y="80" width="14" height="56" rx="7"/>
+  </g>
+  <text x="168" y="102" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="56" font-weight="700" fill="#f6efe2" letter-spacing="-1.5">YouConvert</text>
+  <text x="468" y="102" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="56" font-weight="700" fill="#ff6a2b" letter-spacing="-1.5">.com</text>
+</svg>
