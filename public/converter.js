@@ -227,7 +227,7 @@ window.setMode = function setMode(mode) {
     icon.classList.add('local-only');
     text.classList.add('local-only');
     text.innerHTML =
-      '<b>100% local.</b> Files are decoded right here in your tab. No upload, no server, no limits on what you can convert.';
+      '<b>100% local.</b> Files are decoded right here in your tab. No upload, no server, no limits on what you can convert. All files are converted in the browser and do not leave your device.';
     optsEl.style.display = '';
   } else {
     icon.classList.remove('local-only');
