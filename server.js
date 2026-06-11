@@ -32,6 +32,7 @@ import {
   hasActiveSubscription,
   getSubscriptionSummary,
   cancelSubscriptionAtPeriodEnd,
+  cancelSubscriptionImmediately,
   reactivateSubscription,
   resolvePaidCheckout,
   findStripeCustomerByEmail,
@@ -44,6 +45,21 @@ import {
   deleteConversion,
   userUploadDir,
 } from './lib/conversions.js';
+import {
+  logConversionEvent,
+  countConversionEventsForUser,
+  getFormatStatsForUser,
+  getRecentEventsForUser,
+  getGlobalFormatStats,
+  getConversionOverview,
+} from './lib/conversion-events.js';
+import {
+  isAdminEmail,
+  requireAdmin,
+  listUsers,
+  countUsers,
+  deleteUserAccount,
+} from './lib/admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3002;
@@ -675,6 +691,213 @@ app.get('/api/config', (_req, res) => {
     zamzar: !!ZAMZAR_API_KEY,
     stripe: !!stripe,
   });
+});
+
+/* ---------- Conversion analytics ---------- */
+app.post('/api/events/conversion', (req, res) => {
+  const { inputFormat, outputFormat, mode, fileSize, duration, savedToLibrary } = req.body || {};
+  if (!inputFormat || !outputFormat || !mode) {
+    return res.status(400).json({ error: 'inputFormat, outputFormat and mode are required' });
+  }
+  if (mode !== 'local' && mode !== 'server') {
+    return res.status(400).json({ error: 'Invalid mode' });
+  }
+
+  let userId = null;
+  const token = req.cookies?.wavtomp3_token;
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload) userId = payload.sub;
+  }
+
+  try {
+    logConversionEvent({
+      userId,
+      inputFormat: String(inputFormat).toLowerCase().replace(/[^a-z0-9]/g, ''),
+      outputFormat: String(outputFormat).toLowerCase().replace(/[^a-z0-9]/g, ''),
+      mode,
+      fileSize: fileSize ? Number(fileSize) : null,
+      duration: duration ? Number(duration) : null,
+      savedToLibrary: !!savedToLibrary,
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Conversion event error:', err);
+    res.status(500).json({ error: 'Failed to log conversion' });
+  }
+});
+
+/* ---------- Admin ---------- */
+app.get('/api/admin/me', requireAuth, (req, res) => {
+  res.json({ admin: isAdminEmail(req.userEmail) });
+});
+
+app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const conversions = getConversionOverview();
+    const formatStats = getGlobalFormatStats();
+    let activeSubscriptions = 0;
+
+    if (stripe) {
+      const users = listUsers({ limit: 500, offset: 0 }).users;
+      const checks = await Promise.all(
+        users
+          .filter((u) => u.stripeCustomerId)
+          .map((u) => hasActiveSubscription(stripe, u.stripeCustomerId).catch(() => false))
+      );
+      activeSubscriptions = checks.filter(Boolean).length;
+    }
+
+    res.json({
+      totalUsers: countUsers(),
+      activeSubscriptions,
+      conversions,
+      topFormats: formatStats,
+    });
+  } catch (err) {
+    console.error('Admin overview error:', err);
+    res.status(500).json({ error: 'Failed to load overview' });
+  }
+});
+
+app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+  const search = req.query.q || '';
+  const limit = Math.min(Number(req.query.limit) || 50, 100);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
+  res.json(listUsers({ search, limit, offset }));
+});
+
+app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.id);
+  const user = findUserById(userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  try {
+    let subscription = null;
+    let invoices = [];
+    if (stripe && user.stripe_customer_id) {
+      subscription = await getSubscriptionSummary(stripe, user.stripe_customer_id);
+      invoices = await listCustomerInvoices(stripe, user.stripe_customer_id);
+    }
+
+    res.json({
+      user: publicUser(user),
+      stripeCustomerId: user.stripe_customer_id,
+      subscription,
+      invoices,
+      conversionCount: countConversionEventsForUser(userId),
+      formatStats: getFormatStatsForUser(userId).map((row) => ({
+        inputFormat: row.input_format,
+        outputFormat: row.output_format,
+        mode: row.mode,
+        count: row.count,
+      })),
+      recentConversions: getRecentEventsForUser(userId),
+      libraryFiles: listConversions(userId),
+    });
+  } catch (err) {
+    console.error('Admin user detail error:', err);
+    res.status(500).json({ error: 'Failed to load user' });
+  }
+});
+
+app.post('/api/admin/users/:id/password', requireAuth, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.id);
+  const { newPassword } = req.body || {};
+  if (!findUserById(userId)) return res.status(404).json({ error: 'User not found' });
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+
+  try {
+    const passwordHash = await hashPassword(newPassword);
+    updateUserPassword(userId, passwordHash);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Admin password reset error:', err);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
+app.post('/api/admin/users/:id/cancel-subscription', requireAuth, requireAdmin, async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
+
+  const user = findUserById(Number(req.params.id));
+  if (!user?.stripe_customer_id) {
+    return res.status(400).json({ error: 'No subscription linked to this account' });
+  }
+
+  const immediate = req.body?.immediate === true;
+
+  try {
+    const result = immediate
+      ? await cancelSubscriptionImmediately(stripe, user.stripe_customer_id)
+      : await cancelSubscriptionAtPeriodEnd(stripe, user.stripe_customer_id);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json({ ok: true, subscription: result.subscription });
+  } catch (err) {
+    console.error('Admin cancel subscription error:', err);
+    res.status(500).json({ error: err.message || 'Failed to cancel subscription' });
+  }
+});
+
+app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.id);
+  const user = findUserById(userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (userId === req.userId) {
+    return res.status(400).json({ error: 'You cannot delete your own admin account from here' });
+  }
+
+  try {
+    if (stripe && user.stripe_customer_id && req.body?.cancelStripe) {
+      await cancelSubscriptionImmediately(stripe, user.stripe_customer_id).catch(() => {});
+    }
+    const ok = deleteUserAccount(userId);
+    if (!ok) return res.status(404).json({ error: 'User not found' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Admin delete user error:', err);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
+app.get('/api/admin/payments', requireAuth, requireAdmin, async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
+
+  const limit = Math.min(Number(req.query.limit) || 50, 100);
+
+  try {
+    const invoices = await stripe.invoices.list({
+      limit,
+      expand: ['data.customer'],
+    });
+
+    res.json({
+      payments: invoices.data.map((inv) => {
+        const customer = inv.customer;
+        const customerId = typeof customer === 'string' ? customer : customer?.id;
+        const user = customerId ? findUserByStripeCustomerId(customerId) : null;
+        return {
+          id: inv.id,
+          number: inv.number,
+          date: inv.created,
+          amount: inv.amount_paid,
+          currency: inv.currency,
+          status: inv.status,
+          customerEmail: typeof customer === 'object' && !customer.deleted ? customer.email : null,
+          userId: user?.id ?? null,
+          userEmail: user?.email ?? null,
+          pdfUrl: inv.invoice_pdf,
+          hostedUrl: inv.hosted_invoice_url,
+        };
+      }),
+    });
+  } catch (err) {
+    console.error('Admin payments error:', err);
+    res.status(500).json({ error: 'Failed to load payments' });
+  }
 });
 
 app.listen(PORT, () => {

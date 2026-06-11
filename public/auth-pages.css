@@ -137,6 +137,29 @@ h1{font-family:var(--display);font-weight:800;font-size:clamp(32px,5vw,44px);let
 .check-col{width:36px;padding-right:0!important}
 .check-col input{width:16px;height:16px;accent-color:var(--signal);cursor:pointer}
 .check-col input:disabled{opacity:.35;cursor:not-allowed}
+.admin-panel{max-width:1040px}
+.admin-tabs{display:flex;gap:8px;margin-top:28px;flex-wrap:wrap}
+.admin-tab{background:var(--bg);color:var(--muted);border:1px solid var(--line);font-weight:600;font-size:13px;
+  padding:10px 16px;border-radius:10px;cursor:pointer;transition:.15s}
+.admin-tab:hover{color:var(--text);border-color:var(--line-strong)}
+.admin-tab.active{color:var(--text);border-color:var(--signal);background:var(--amber-dim)}
+.admin-section{margin-top:20px}
+.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media(max-width:760px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.admin-stat{border:1px solid var(--line-strong);border-radius:16px;padding:18px 20px;background:var(--surface-2);text-align:center}
+.admin-stat .n{display:block;font-family:var(--display);font-size:32px;font-weight:800;line-height:1}
+.admin-stat .l{display:block;font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-top:8px}
+.admin-toolbar{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.admin-search{flex:1;min-width:200px;background:var(--bg);border:1px solid var(--line);border-radius:11px;
+  color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 14px}
+.admin-search:focus{outline:none;border-color:var(--signal)}
+.admin-table td,.admin-table th{padding-right:16px}
+.admin-detail{margin-top:20px}
+.admin-detail h3{font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:10px}
+.admin-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.admin-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:760px){.admin-detail-grid{grid-template-columns:1fr}}
+.admin-danger{border:1px solid rgba(255,106,43,0.35);border-radius:14px;padding:18px;background:var(--amber-dim)}
 .top-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;flex-wrap:wrap}
 .btn-ghost{background:var(--bg);color:var(--muted);border:1px solid var(--line);font-weight:600;font-size:13px;
   padding:10px 16px;border-radius:10px;cursor:pointer}

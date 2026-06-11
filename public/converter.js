@@ -34,8 +34,8 @@ let subscriptionActive = false;
 let currentUser = null;
 
 const PLANS = {
-  monthly: { cta: 'Subscribe — $12/month' },
-  annual: { cta: 'Subscribe — $72/year' },
+  monthly: { cta: 'Unlock Now' },
+  annual: { cta: 'Unlock Now' },
 };
 
 const SVG_PLAY =
@@ -887,6 +887,26 @@ function setItemConverted(item, blob) {
   }
 }
 
+async function logConversionAnalytics(item, mode) {
+  try {
+    await fetch('/api/events/conversion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        inputFormat: inputSlug,
+        outputFormat: outputSlug,
+        mode,
+        fileSize: item.blob?.size || item.file?.size || null,
+        duration: item.duration || null,
+        savedToLibrary: !!item.libraryId,
+      }),
+    });
+  } catch {
+    // analytics are best-effort
+  }
+}
+
 async function saveConversionToLibrary(item, mode) {
   if (!currentUser || !subscriptionActive || !item.blob || item.libraryId) return;
 
@@ -962,6 +982,7 @@ window.convert = async function convert() {
       }
       setItemConverted(item, blob);
       await saveConversionToLibrary(item, conversionMode);
+      await logConversionAnalytics(item, conversionMode);
     }
 
     bar.style.width = '100%';
