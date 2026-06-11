@@ -84,6 +84,21 @@ h1{font-family:var(--display);font-weight:800;font-size:clamp(32px,5vw,44px);let
   border:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em}
 .badge.active{color:var(--mint);border-color:rgba(92,224,182,0.4);background:var(--mint-dim)}
 .badge.inactive{color:var(--faint)}
+.badge.canceling{color:var(--signal-2);border-color:rgba(255,177,59,0.4);background:var(--amber-dim)}
+.sub-actions{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.sub-notice{font-size:13.5px;color:var(--muted);line-height:1.55;margin-bottom:14px}
+.sub-notice b{color:var(--text);font-weight:600}
+.sub-btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn-cancel{background:var(--bg);color:var(--signal);border:1px solid rgba(255,106,43,0.45);
+  font-weight:600;font-size:13px;padding:10px 16px;border-radius:10px;cursor:pointer;transition:.2s}
+.btn-cancel:hover:not(:disabled){border-color:var(--signal);background:var(--amber-dim)}
+.btn-cancel:disabled{opacity:.5;cursor:not-allowed}
+.btn-keep{background:var(--mint-dim);color:var(--mint);border:1px solid rgba(92,224,182,0.45);
+  font-weight:600;font-size:13px;padding:10px 16px;border-radius:10px;cursor:pointer;transition:.2s}
+.btn-keep:hover:not(:disabled){border-color:var(--mint)}
+.btn-keep:disabled{opacity:.5;cursor:not-allowed}
+.sub-err{font-size:13px;color:var(--signal-2);margin-top:12px}
+.sub-err[hidden]{display:none}
 
 .inv-table{width:100%;border-collapse:collapse;font-size:13.5px}
 .inv-table th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;

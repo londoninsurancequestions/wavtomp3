@@ -99,7 +99,7 @@ async function batchDownload(container) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wavtomp3-${new Date().toISOString().slice(0, 10)}.zip`;
+    a.download = `youconvert-${new Date().toISOString().slice(0, 10)}.zip`;
     document.body.appendChild(a);
     a.click();
     a.remove();

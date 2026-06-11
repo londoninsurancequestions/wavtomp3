@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{{FAVICON}}
+<title>Privacy Policy — YouConvert</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a08;--bg-2:#100e0b;--surface:#15120d;--surface-2:#1d1812;
+    --line:rgba(255,236,210,0.09);--line-strong:rgba(255,236,210,0.16);
+    --text:#f6efe2;--muted:#a89e8c;--faint:#6f675a;
+    --signal:#ff6a2b;--signal-2:#ffb13b;--mint:#5ce0b6;
+    --mint-dim:rgba(92,224,182,0.14);--amber-dim:rgba(255,106,43,0.13);
+    --display:"Bricolage Grotesque",serif;--body:"Hanken Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.7;
+    -webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(800px 460px at 82% -10%,rgba(255,106,43,0.13),transparent 60%),
+      radial-gradient(700px 600px at 5% 8%,rgba(92,224,182,0.05),transparent 55%)}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+  a{color:var(--signal-2);text-decoration:none}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:linear-gradient(to bottom,rgba(11,10,8,0.92),rgba(11,10,8,0.6));border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-0.02em;color:var(--text)}
+  .brand:hover{text-decoration:none}
+  .brand .io{color:var(--signal)}
+  .logo-mark{display:flex;align-items:flex-end;gap:2.5px;height:22px}
+  .logo-mark i{width:3px;border-radius:2px;background:var(--signal);display:block;animation:bob 1.4s ease-in-out infinite}
+  .logo-mark i:nth-child(1){height:8px}.logo-mark i:nth-child(2){height:18px;background:var(--signal-2)}
+  .logo-mark i:nth-child(3){height:12px}.logo-mark i:nth-child(4){height:22px;background:var(--signal-2)}.logo-mark i:nth-child(5){height:9px}
+  @keyframes bob{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1)}}
+  .nav-back{font-family:var(--mono);font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+  .nav-back:hover{color:var(--text);text-decoration:none}
+  .nav-back svg{width:14px;height:14px}
+  .head{padding:64px 0 36px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--signal)}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(38px,6vw,62px);letter-spacing:-0.035em;line-height:1;margin:16px 0 0}
+  .updated{font-family:var(--mono);font-size:13px;color:var(--faint);margin-top:18px}
+  .layout{display:grid;grid-template-columns:230px 1fr;gap:54px;padding:48px 0 90px;align-items:start}
+  @media(max-width:860px){.layout{grid-template-columns:1fr;gap:8px}}
+  .toc{position:sticky;top:96px;font-size:13.5px}
+  @media(max-width:860px){.toc{position:static;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:24px;background:var(--bg-2)}}
+  .toc h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+  .toc a{display:block;color:var(--muted);padding:5px 0;line-height:1.4;border-left:2px solid transparent;padding-left:13px;margin-left:-13px;transition:.15s}
+  .toc a:hover{color:var(--text);text-decoration:none}
+  .toc a.active{color:var(--signal-2);border-left-color:var(--signal)}
+  .content section{margin-bottom:42px;scroll-margin-top:90px}
+  .content h2{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-0.02em;line-height:1.15;
+    margin-bottom:14px;display:flex;gap:11px;align-items:baseline}
+  .content h2 .num{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--signal);flex:none}
+  .content h3{font-family:var(--body);font-weight:700;font-size:16px;color:var(--text);margin:22px 0 8px}
+  .content p{color:var(--muted);margin-bottom:14px}
+  .content p strong,.content li strong{color:var(--text);font-weight:600}
+  .content ul{list-style:none;margin:0 0 14px;padding:0}
+  .content li{color:var(--muted);position:relative;padding-left:22px;margin-bottom:9px}
+  .content li::before{content:"";position:absolute;left:2px;top:11px;width:6px;height:6px;border-radius:50%;
+    background:var(--signal);opacity:.8}
+  .callout{border:1px solid var(--line);border-left:3px solid var(--mint);background:var(--bg-2);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin:0 0 14px}
+  .callout p{margin:0;font-size:14px}
+  .callout p strong{color:var(--mint)}
+  footer{border-top:1px solid var(--line);padding:42px 0 56px}
+  .foot-in{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+    font-family:var(--mono);font-size:12.5px;color:var(--faint)}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap}
+  .foot-links a{color:var(--muted)}
+</style>
+{{POSTHOG_SNIPPET}}
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap nav-in">
+    <a href="/" class="brand">
+      <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
+      YouConvert<span class="io">.com</span>
+    </a>
+    <a href="/" class="nav-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m0 0l6 6m-6-6l6-6"/></svg>
+      Back to converter
+    </a>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<header class="head">
+  <div class="wrap">
+    <div class="eyebrow">Legal</div>
+    <h1>Privacy Policy</h1>
+    <div class="updated">Last updated: 11 June 2026</div>
+  </div>
+</header>
+
+<!-- BODY -->
+<div class="wrap layout">
+
+  <!-- TABLE OF CONTENTS -->
+  <aside class="toc">
+    <h4>Contents</h4>
+    <a href="#intro">1. Introduction</a>
+    <a href="#applicability">2. Applicability</a>
+    <a href="#information">3. Information we collect</a>
+    <a href="#legal-bases">4. Legal bases</a>
+    <a href="#cookies">5. Cookies</a>
+    <a href="#analytics">6. Analytics (PostHog)</a>
+    <a href="#sharing">7. Sharing with third parties</a>
+    <a href="#security">8. Security</a>
+    <a href="#retention">9. Retention</a>
+    <a href="#transfers">10. International transfers</a>
+    <a href="#rights">11. Your rights</a>
+    <a href="#children">12. Children</a>
+    <a href="#changes">13. Changes</a>
+    <a href="#contact">14. Contact</a>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <section id="intro">
+      <h2><span class="num">01</span> Introduction</h2>
+      <p>Thank you for using YouConvert. We take your privacy seriously and want you to understand what personal data we collect, how we use it, and the choices available to you.</p>
+      <p><strong>YouConvert</strong> ("<strong>we</strong>", "<strong>us</strong>", or "<strong>our</strong>") operates the audio conversion website at youconvert.com and related tools (together, the "<strong>Service</strong>"). This Privacy Policy explains how we handle personal data when you visit, convert files, create an account, subscribe, or contact us.</p>
+      <p>We collect only the personal information we need to operate the Service. We process personal data in accordance with the UK General Data Protection Regulation ("<strong>UK GDPR</strong>"), the EU General Data Protection Regulation ("<strong>GDPR</strong>") where it applies, and the Data Protection Act 2018. We use your data only as described in this Privacy Policy.</p>
+      <p>We do <strong>not</strong> sell your personal data. We do <strong>not</strong> use third-party advertising networks or serve targeted advertising on the Service.</p>
+      <p>This Privacy Policy should be read alongside our <a href="terms.html">Terms of Service</a>, which govern your use of the Service.</p>
+    </section>
+
+    <section id="applicability">
+      <h2><span class="num">02</span> Applicability</h2>
+      <p>This Privacy Policy applies to:</p>
+      <ul>
+        <li>visitors to youconvert.com and related pages;</li>
+        <li>users of our audio conversion tools, whether using local (browser) or server conversion;</li>
+        <li>registered account holders and subscribers, including users of the My Files library; and</li>
+        <li>anyone who contacts us for support or other enquiries.</li>
+      </ul>
+      <p>This Privacy Policy does <strong>not</strong> apply to third-party services we do not control — including Stripe (payments), Railway (hosting), PostHog (analytics), and third-party conversion providers — except where we describe how we share data with them. Each provider's own privacy policy governs its processing of your data.</p>
+      <p>Where you process personal data contained within audio files you upload or convert, you may be the data controller of that content and we may act as a processor on your instructions when handling uploaded files for server conversion or optional storage in My Files.</p>
+    </section>
+
+    <section id="information">
+      <h2><span class="num">03</span> Information we collect</h2>
+      <p>The information we collect depends on how you use the Service. We group it as follows.</p>
+
+      <h3>Website visitors</h3>
+      <p>When you browse the Service, we and our hosting and analytics providers may automatically collect technical information such as:</p>
+      <ul>
+        <li>Internet Protocol (IP) address and approximate location derived from it;</li>
+        <li>browser type and version, device type, operating system and language settings;</li>
+        <li>referring URL, pages viewed, links clicked and timestamps;</li>
+        <li>diagnostic and performance data needed to operate, secure and improve the Service.</li>
+      </ul>
+      <p>We collect this information to deliver the website, understand usage, maintain security, prevent abuse and troubleshoot errors.</p>
+
+      <h3>Local (browser) conversion</h3>
+      <div class="callout">
+        <p><strong>Your files stay on your device.</strong> When you use local conversion, audio files are processed entirely in your web browser. We do not receive, upload, access or store the content of files you convert in this mode.</p>
+      </div>
+      <p>Local conversion may still involve limited technical data — such as page views, conversion events and error logs — collected through cookies, analytics and standard web server logs as described elsewhere in this policy. That data does not include the audio content of your files.</p>
+      <p>The Service may use <strong>IndexedDB</strong> in your browser to stage files temporarily between pages (for example, when moving from upload to preview). IndexedDB data remains on your device under your browser's control and is not transmitted to our servers as part of local conversion.</p>
+
+      <h3>Server conversion</h3>
+      <p>When you choose server conversion, you upload audio files to our infrastructure so we can convert them. In this mode we may collect:</p>
+      <ul>
+        <li>the uploaded file and its converted output, for as long as needed to complete your request;</li>
+        <li>file metadata such as filename, format, size and duration;</li>
+        <li>technical data associated with the upload and conversion request.</li>
+      </ul>
+      <p>Server conversions are performed using third-party conversion services. Uploaded files and outputs are kept only temporarily and deleted after processing, as described in section 9.</p>
+
+      <h3>Accounts and subscriptions</h3>
+      <p>If you create an account or subscribe, we collect:</p>
+      <ul>
+        <li><strong>Email address</strong> — used to identify your account, authenticate you and send service-related communications;</li>
+        <li><strong>Password</strong> — stored only as a <strong>bcrypt hash</strong>; we never store or have access to your plain-text password;</li>
+        <li><strong>Stripe customer ID</strong> — a reference linking your account to your payment profile at Stripe.</li>
+      </ul>
+      <p>We do not collect or store your full payment card details. Payment card information is entered and processed directly by <strong>Stripe, Inc.</strong> in accordance with <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe's Privacy Policy</a>.</p>
+
+      <h3>My Files</h3>
+      <p>Subscribers may optionally save converted outputs to the <strong>My Files</strong> library associated with their account. If you use this feature, we store the files you choose to save, together with related metadata (such as filename, format and save date), until you delete them or your account is closed.</p>
+
+      <h3>Support and correspondence</h3>
+      <p>If you contact us at <a href="mailto:support@youconvert.com">support@youconvert.com</a>, we collect the information you provide — such as your name, email, account details and message content — to respond and keep a record of our correspondence where appropriate.</p>
+
+      <h3>Information we do not intentionally collect</h3>
+      <p>We do not ask you to provide special categories of personal data (such as health, biometric or religious information). However, audio files you upload may incidentally contain personal data or sensitive content. You are responsible for ensuring you have a lawful basis to upload and process such content, and for deciding whether local or server conversion is appropriate for your needs.</p>
+    </section>
+
+    <section id="legal-bases">
+      <h2><span class="num">04</span> Legal bases</h2>
+      <p>Under the UK GDPR and GDPR, we must identify a lawful basis for each purpose of processing. Depending on your relationship with us and the activity involved, we rely on one or more of the following:</p>
+
+      <h3>Performance of a contract</h3>
+      <p>We process account data, subscription information and files you upload for server conversion (and optionally store in My Files) to provide the Service you request, in accordance with our <a href="terms.html">Terms of Service</a>. This includes creating and managing your account, performing conversions, enabling downloads and operating the My Files library.</p>
+
+      <h3>Legitimate interests</h3>
+      <p>We process certain data where necessary for our legitimate interests, provided those interests are not overridden by your rights. This includes:</p>
+      <ul>
+        <li>operating, maintaining and improving the Service;</li>
+        <li>monitoring usage through analytics to understand how features are used;</li>
+        <li>protecting the security and integrity of the Service and preventing fraud or abuse;</li>
+        <li>responding to enquiries and providing customer support;</li>
+        <li>enforcing our Terms and defending legal claims.</li>
+      </ul>
+      <p>Where we rely on legitimate interests, we consider the impact on you and your rights. You may contact us for further information about how we have balanced these interests.</p>
+
+      <h3>Legal obligation</h3>
+      <p>We may process and retain information where required to comply with applicable law, regulation, court order or lawful request from a public authority — for example, tax, accounting or anti-fraud obligations.</p>
+
+      <h3>Consent</h3>
+      <p>Where required by law, we will obtain your consent before placing non-essential cookies or similar technologies. You may withdraw consent at any time without affecting the lawfulness of processing before withdrawal. See sections 5 and 6 for more detail.</p>
+    </section>
+
+    <section id="cookies">
+      <h2><span class="num">05</span> Cookies</h2>
+      <p>Cookies are small text files stored on your browser or device when you visit a website. We use cookies and similar technologies to operate the Service, keep you signed in and understand how it is used.</p>
+
+      <h3>Authentication cookie</h3>
+      <p>When you sign in, we set an authentication cookie named <strong>wavtomp3_token</strong>. This cookie:</p>
+      <ul>
+        <li>is <strong>httpOnly</strong>, meaning it cannot be read by client-side JavaScript;</li>
+        <li>is used to maintain your logged-in session and associate requests with your account;</li>
+        <li>is removed or expires when you sign out or when the session ends.</li>
+      </ul>
+
+      <h3>Other cookies and similar technologies</h3>
+      <p>We and our analytics provider may also use cookies, local storage or similar technologies for:</p>
+      <ul>
+        <li><strong>Security</strong> — detecting suspicious activity and protecting accounts;</li>
+        <li><strong>Preferences</strong> — remembering settings that improve your experience;</li>
+        <li><strong>Analytics</strong> — measuring traffic and feature usage (see section 6).</li>
+      </ul>
+      <p>You can control cookies through your browser settings. Blocking or deleting cookies may limit certain features — for example, you may not be able to remain signed in without the authentication cookie.</p>
+
+      <h3>Do Not Track</h3>
+      <p>Some browsers offer a "Do Not Track" (DNT) signal. Because there is no widely accepted standard for how websites should respond to DNT, <strong>we do not alter our practices in response to DNT signals</strong>. You can manage cookies and analytics as described in this policy and in section 6.</p>
+    </section>
+
+    <section id="analytics">
+      <h2><span class="num">06</span> Analytics (PostHog)</h2>
+      <p>We use <strong>PostHog, Inc.</strong> for product analytics to understand how visitors and signed-in users interact with the Service, diagnose problems and prioritise improvements.</p>
+      <p>PostHog is configured to send data to PostHog's <strong>EU hosting region</strong> at <strong>eu.i.posthog.com</strong>. Analytics data may include:</p>
+      <ul>
+        <li>pages visited, buttons clicked and conversion flows completed;</li>
+        <li>browser, device and referrer information;</li>
+        <li>approximate location derived from IP address;</li>
+        <li>error and performance events.</li>
+      </ul>
+      <p>Our PostHog configuration uses <strong>person_profiles: identified_only</strong>. This means PostHog creates a persistent user profile only when you are identified — for example, when you sign in to an account — rather than for every anonymous visitor.</p>
+      <p>When you are signed in, analytics events may be linked to your account identifier to help us understand subscriber usage. We use this information for internal product and operational purposes, not for advertising.</p>
+      <p>PostHog may set its own cookies or use similar technologies. For more information about PostHog's practices, see PostHog's privacy documentation. Where required by law, we will ask for your consent before enabling non-essential analytics cookies.</p>
+    </section>
+
+    <section id="sharing">
+      <h2><span class="num">07</span> Sharing with third parties</h2>
+      <p>We do not sell, rent or trade your personal data. We share information only in the circumstances below.</p>
+
+      <h3>Service providers</h3>
+      <p>We use trusted third parties to help us operate the Service. They process data on our instructions and only for the purposes we specify:</p>
+      <ul>
+        <li><strong>Stripe</strong> — subscription payments. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">stripe.com/privacy</a>.</li>
+        <li><strong>Railway</strong> (<a href="https://railway.com" target="_blank" rel="noopener noreferrer">railway.com</a>) — hosts the Service and stores account data and files uploaded for server conversion or saved to My Files.</li>
+        <li><strong>PostHog</strong> — product analytics, as described in section 6.</li>
+        <li><strong>Third-party conversion providers</strong> — server-side audio conversion when you use server mode.</li>
+      </ul>
+
+      <h3>Legal and safety disclosures</h3>
+      <p>We may disclose information if we reasonably believe disclosure is necessary to comply with law or a lawful request; to protect YouConvert, our users or the public; or to detect, prevent or address fraud, security or technical issues.</p>
+
+      <h3>Business transfers</h3>
+      <p>If we are involved in a merger, acquisition, reorganisation or sale of assets, personal data may be transferred as part of that transaction. We will take reasonable steps to ensure any recipient continues to protect your data in line with this Privacy Policy.</p>
+    </section>
+
+    <section id="security">
+      <h2><span class="num">08</span> Security</h2>
+      <p>We implement appropriate technical and organisational measures designed to protect personal data against unauthorised access, alteration, disclosure or destruction. These measures include, where applicable:</p>
+      <ul>
+        <li>hashing passwords with bcrypt before storage;</li>
+        <li>using httpOnly authentication cookies to reduce exposure to client-side scripts;</li>
+        <li>encrypting data in transit using HTTPS/TLS;</li>
+        <li>restricting access to personal data to personnel and contractors who need it;</li>
+        <li>monitoring for abuse and applying rate limits and other safeguards.</li>
+      </ul>
+      <p>No method of transmission over the internet or electronic storage is completely secure. While we work hard to protect your information, we cannot guarantee absolute security. You are responsible for keeping your account password confidential and for maintaining backups of files you process with the Service.</p>
+      <p>If you believe your account or data has been compromised, please contact us promptly at <a href="mailto:support@youconvert.com">support@youconvert.com</a>.</p>
+    </section>
+
+    <section id="retention">
+      <h2><span class="num">09</span> Retention</h2>
+      <p>We retain personal data only for as long as necessary for the purposes described in this Privacy Policy, unless a longer retention period is required or permitted by law.</p>
+      <ul>
+        <li><strong>Server uploads and temporary conversions.</strong> Files uploaded for server conversion, and their converted outputs, are deleted promptly after your conversion completes and you download the result (or after a short safety window if a download is interrupted). We do not use uploaded files for training, marketing or unrelated purposes.</li>
+        <li><strong>Local (browser) conversion.</strong> We do not retain file content from local conversions on our servers. Any IndexedDB staging data remains on your device until your browser clears it.</li>
+        <li><strong>My Files.</strong> Converted files you save to My Files are retained until you delete them, your subscription ends and any grace period expires, or your account is closed — whichever comes first, subject to any legal retention requirements.</li>
+        <li><strong>Account data.</strong> We retain your email address, password hash, Stripe customer ID and related account records while your account is active and for a reasonable period afterwards to resolve disputes, enforce our Terms, comply with law and maintain business records.</li>
+        <li><strong>Support correspondence.</strong> We retain messages and related records for as long as needed to address your enquiry and maintain an appropriate history of communications.</li>
+        <li><strong>Analytics data.</strong> Usage analytics are retained according to our analytics provider's configuration and our internal retention schedules, typically in aggregated or pseudonymised form.</li>
+      </ul>
+      <p>When data is no longer needed, we delete it or anonymise it so it can no longer be associated with you.</p>
+    </section>
+
+    <section id="transfers">
+      <h2><span class="num">10</span> International transfers</h2>
+      <p>YouConvert may be accessed from many countries. Our providers — including Stripe, Railway, PostHog and third-party conversion services — may process personal data in the United Kingdom, the European Economic Area, the United States and other jurisdictions.</p>
+      <p>Where personal data is transferred from the UK or EEA to a country that has not been recognised as providing an adequate level of data protection, we implement appropriate safeguards as required by UK GDPR and GDPR. These may include:</p>
+      <ul>
+        <li>Standard Contractual Clauses approved by the UK Information Commissioner's Office or the European Commission;</li>
+        <li>the UK International Data Transfer Agreement or Addendum, where applicable;</li>
+        <li>other lawful transfer mechanisms recognised under applicable data-protection law.</li>
+      </ul>
+      <p>You may contact us for more information about the safeguards we rely on for international transfers, or to request a copy where we are permitted to provide one.</p>
+    </section>
+
+    <section id="rights">
+      <h2><span class="num">11</span> Your rights</h2>
+      <p>Depending on where you live, you may have the following rights under UK GDPR, GDPR or comparable law. We will respond to valid requests within the time limits required by applicable law (typically one month).</p>
+      <ul>
+        <li><strong>Access</strong> — request a copy of the personal data we hold about you;</li>
+        <li><strong>Rectification</strong> — request correction of inaccurate or incomplete data;</li>
+        <li><strong>Erasure</strong> — request deletion of your personal data in certain circumstances;</li>
+        <li><strong>Restriction</strong> — request that we limit how we use your data in certain circumstances;</li>
+        <li><strong>Portability</strong> — receive personal data you provided to us in a structured, commonly used, machine-readable format, and transmit it to another controller where technically feasible;</li>
+        <li><strong>Objection</strong> — object to processing based on legitimate interests, and object to direct marketing (we do not send third-party advertising);</li>
+        <li><strong>Withdraw consent</strong> — where processing is based on consent, withdraw it at any time.</li>
+      </ul>
+      <p>To exercise any of these rights, contact us at <a href="mailto:support@youconvert.com">support@youconvert.com</a>. We may need to verify your identity before fulfilling a request. We will not discriminate against you for exercising your privacy rights.</p>
+      <p>You also have the right to lodge a complaint with a supervisory authority. If you are in the United Kingdom, you may contact the <strong>Information Commissioner's Office (ICO)</strong> at <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">ico.org.uk</a>. If you are in the EEA, you may contact your local data protection authority.</p>
+    </section>
+
+    <section id="children">
+      <h2><span class="num">12</span> Children</h2>
+      <p>The Service is not directed at children and we do not knowingly collect personal data from anyone under the age of <strong>16</strong>.</p>
+      <p>If you are under 16, you must not use the Service or provide personal data to us. If we learn that we have collected personal data from a child under 16 without appropriate parental consent, we will take steps to delete that information promptly.</p>
+      <p>If you believe a child under 16 has provided personal data to us, please contact us at <a href="mailto:support@youconvert.com">support@youconvert.com</a>.</p>
+    </section>
+
+    <section id="changes">
+      <h2><span class="num">13</span> Changes</h2>
+      <p>We may update this Privacy Policy from time to time to reflect changes to the Service, our practices, or legal requirements. When we make material changes, we will take reasonable steps to notify you — for example, by posting a notice on the Service, updating the "Last updated" date at the top of this page, or sending an email to the address associated with your account.</p>
+      <p>Changes take effect when posted unless a later effective date is stated. We encourage you to review this page periodically. Your continued use of the Service after changes take effect constitutes acceptance of the updated Privacy Policy, except where your consent is required by law.</p>
+    </section>
+
+    <section id="contact">
+      <h2><span class="num">14</span> Contact</h2>
+      <p>Questions about this Privacy Policy, your data, or your rights? Contact us at <a href="mailto:support@youconvert.com">support@youconvert.com</a>. We aim to respond without undue delay and within applicable legal timeframes.</p>
+    </section>
+
+  </main>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot-in">
+    <span>© 2026 YouConvert</span>
+    <div class="foot-links">
+      <a href="/">Converter</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* highlight the active section in the table of contents */
+  const links=[...document.querySelectorAll('.toc a')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const a=map.get(e.target.id);
+        if(a)a.classList.add('active');
+      }
+    });
+  },{rootMargin:'-40% 0px -55% 0px'});
+  document.querySelectorAll('.content section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

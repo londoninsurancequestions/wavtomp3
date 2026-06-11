@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{{FAVICON}}
+<title>Terms of Service — YouConvert</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a08;--bg-2:#100e0b;--surface:#15120d;--surface-2:#1d1812;
+    --line:rgba(255,236,210,0.09);--line-strong:rgba(255,236,210,0.16);
+    --text:#f6efe2;--muted:#a89e8c;--faint:#6f675a;
+    --signal:#ff6a2b;--signal-2:#ffb13b;--mint:#5ce0b6;
+    --mint-dim:rgba(92,224,182,0.14);--amber-dim:rgba(255,106,43,0.13);
+    --display:"Bricolage Grotesque",serif;--body:"Hanken Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.7;
+    -webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(800px 460px at 82% -10%,rgba(255,106,43,0.13),transparent 60%),
+      radial-gradient(700px 600px at 5% 8%,rgba(92,224,182,0.05),transparent 55%)}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+  a{color:var(--signal-2);text-decoration:none}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:linear-gradient(to bottom,rgba(11,10,8,0.92),rgba(11,10,8,0.6));border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-0.02em;color:var(--text)}
+  .brand:hover{text-decoration:none}
+  .brand .io{color:var(--signal)}
+  .logo-mark{display:flex;align-items:flex-end;gap:2.5px;height:22px}
+  .logo-mark i{width:3px;border-radius:2px;background:var(--signal);display:block;animation:bob 1.4s ease-in-out infinite}
+  .logo-mark i:nth-child(1){height:8px}.logo-mark i:nth-child(2){height:18px;background:var(--signal-2)}
+  .logo-mark i:nth-child(3){height:12px}.logo-mark i:nth-child(4){height:22px;background:var(--signal-2)}.logo-mark i:nth-child(5){height:9px}
+  @keyframes bob{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1)}}
+  .nav-back{font-family:var(--mono);font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+  .nav-back:hover{color:var(--text);text-decoration:none}
+  .nav-back svg{width:14px;height:14px}
+  .head{padding:64px 0 36px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--signal)}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(38px,6vw,62px);letter-spacing:-0.035em;line-height:1;margin:16px 0 0}
+  .updated{font-family:var(--mono);font-size:13px;color:var(--faint);margin-top:18px}
+  .layout{display:grid;grid-template-columns:230px 1fr;gap:54px;padding:48px 0 90px;align-items:start}
+  @media(max-width:860px){.layout{grid-template-columns:1fr;gap:8px}}
+  .toc{position:sticky;top:96px;font-size:13.5px}
+  @media(max-width:860px){.toc{position:static;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:24px;background:var(--bg-2)}}
+  .toc h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+  .toc a{display:block;color:var(--muted);padding:5px 0;line-height:1.4;border-left:2px solid transparent;padding-left:13px;margin-left:-13px;transition:.15s}
+  .toc a:hover{color:var(--text);text-decoration:none}
+  .toc a.active{color:var(--signal-2);border-left-color:var(--signal)}
+  .content section{margin-bottom:42px;scroll-margin-top:90px}
+  .content h2{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-0.02em;line-height:1.15;
+    margin-bottom:14px;display:flex;gap:11px;align-items:baseline}
+  .content h2 .num{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--signal);flex:none}
+  .content h3{font-family:var(--body);font-weight:700;font-size:16px;color:var(--text);margin:22px 0 8px}
+  .content p{color:var(--muted);margin-bottom:14px}
+  .content p strong,.content li strong{color:var(--text);font-weight:600}
+  .content ul{list-style:none;margin:0 0 14px;padding:0}
+  .content li{color:var(--muted);position:relative;padding-left:22px;margin-bottom:9px}
+  .content li::before{content:"";position:absolute;left:2px;top:11px;width:6px;height:6px;border-radius:50%;
+    background:var(--signal);opacity:.8}
+  .callout{border:1px solid var(--line);border-left:3px solid var(--mint);background:var(--bg-2);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin:0 0 14px}
+  .callout p{margin:0;font-size:14px}
+  .callout p strong{color:var(--mint)}
+  footer{border-top:1px solid var(--line);padding:42px 0 56px}
+  .foot-in{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+    font-family:var(--mono);font-size:12.5px;color:var(--faint)}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap}
+  .foot-links a{color:var(--muted)}
+</style>
+{{POSTHOG_SNIPPET}}
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap nav-in">
+    <a href="/" class="brand">
+      <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
+      YouConvert<span class="io">.com</span>
+    </a>
+    <a href="/" class="nav-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m0 0l6 6m-6-6l6-6"/></svg>
+      Back to converter
+    </a>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<header class="head">
+  <div class="wrap">
+    <div class="eyebrow">Legal</div>
+    <h1>Terms of Service</h1>
+    <div class="updated">Last updated: 11 June 2026</div>
+  </div>
+</header>
+
+<!-- BODY -->
+<div class="wrap layout">
+
+  <!-- TABLE OF CONTENTS -->
+  <aside class="toc">
+    <h4>Contents</h4>
+    <a href="#intro">1. Agreement to terms</a>
+    <a href="#service">2. Service description</a>
+    <a href="#eligibility">3. Eligibility &amp; contract</a>
+    <a href="#accounts">4. Accounts</a>
+    <a href="#preview">5. Preview &amp; paid access</a>
+    <a href="#billing">6. Subscriptions &amp; billing</a>
+    <a href="#refunds">7. Cancellation &amp; refunds</a>
+    <a href="#your-content">8. Your files &amp; data responsibility</a>
+    <a href="#acceptable">9. Acceptable use</a>
+    <a href="#ip">10. Intellectual property</a>
+    <a href="#third-party">11. Third-party services</a>
+    <a href="#disclaimer">12. Disclaimers</a>
+    <a href="#liability">13. Limitation of liability</a>
+    <a href="#indemnity">14. Indemnity</a>
+    <a href="#termination">15. Termination</a>
+    <a href="#changes">16. Changes to these terms</a>
+    <a href="#law">17. Governing law</a>
+    <a href="#contact">18. Contact</a>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <section id="intro">
+      <h2><span class="num">01</span> Agreement to terms</h2>
+      <p>These Terms of Service ("<strong>Terms</strong>") are a binding agreement between you and <strong>YouConvert</strong> ("<strong>we</strong>", "<strong>us</strong>", or "<strong>our</strong>"), which provides the website at youconvert.com and related online audio-conversion tools (together, the "<strong>Service</strong>").</p>
+      <p>By accessing or using the Service, you confirm that you have read, understood and agree to be bound by these Terms and by our <a href="privacy.html">Privacy Policy</a>. If you do not agree, you must not use the Service.</p>
+      <p>If you are using the Service on behalf of a business or other organisation, you represent that you have authority to bind that organisation to these Terms, and "you" refers to that organisation as well as to you personally.</p>
+    </section>
+
+    <section id="service">
+      <h2><span class="num">02</span> Service description</h2>
+      <p>YouConvert provides an online audio conversion service. You can convert audio files between supported formats, including <strong>WAV</strong>, <strong>MP3</strong>, <strong>M4A</strong>, <strong>AAC</strong>, <strong>OGG</strong> and <strong>WMA</strong>. The Service is offered in two modes:</p>
+      <ul>
+        <li><strong>Local (browser) conversion.</strong> Conversion runs in your web browser. Your files are processed on your device and are <strong>not uploaded</strong> to our servers.</li>
+        <li><strong>Server conversion.</strong> You may upload files to our servers for conversion using third-party conversion services. Uploaded files and outputs are kept only as long as needed to complete your request, then deleted — see our <a href="privacy.html">Privacy Policy</a>.</li>
+      </ul>
+      <p>Subscribers may also use the <strong>My Files</strong> library to store and manage converted files associated with their account, subject to any storage limits we publish from time to time.</p>
+      <p>We may add, modify, suspend or discontinue any part of the Service at any time. We do not guarantee that the Service, or any particular feature, format or conversion method, will always be available, uninterrupted or error-free.</p>
+    </section>
+
+    <section id="eligibility">
+      <h2><span class="num">03</span> Eligibility &amp; contract</h2>
+      <p>You must be at least <strong>16 years old</strong> to use the Service. By using the Service you represent that you meet this age requirement and that you have the legal capacity to enter into a binding contract.</p>
+      <p>If you are a consumer (an individual acting for purposes wholly or mainly outside your trade, business or profession), these Terms are a consumer contract and mandatory consumer-protection laws in your country of residence may give you rights that cannot be excluded or limited by contract.</p>
+      <p>If you are a business user (acting in the course of a trade, business or profession), you acknowledge that the Service is provided for commercial purposes and that certain consumer protections may not apply to you. In particular, the limitations and exclusions in sections 12, 13 and 14 apply to business users to the fullest extent permitted by law.</p>
+      <p>Your contract with us is formed when you first access or use the Service, or when you complete a subscription purchase, whichever is earlier.</p>
+    </section>
+
+    <section id="accounts">
+      <h2><span class="num">04</span> Accounts</h2>
+      <p>Certain features of the Service — including paid subscriptions, full-length downloads and the My Files library — require you to create an account using a valid email address and password.</p>
+      <p>You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. You agree to provide accurate, current and complete registration information and to keep it up to date.</p>
+      <p>You must notify us promptly at <a href="mailto:support@youconvert.com">support@youconvert.com</a> if you suspect any unauthorised access to or use of your account. We are not liable for losses arising from unauthorised use of your account where you have failed to keep your credentials secure.</p>
+      <p>We may refuse registration, suspend or close an account if we reasonably believe you have breached these Terms or provided false information.</p>
+    </section>
+
+    <section id="preview">
+      <h2><span class="num">05</span> Preview &amp; paid access</h2>
+      <p>The Service allows you to convert audio files and to listen to a <strong>free preview</strong> of the result — typically the <strong>first 30 seconds</strong> — without charge.</p>
+      <p>Downloading the full-length converted file, saving files to your My Files library and accessing certain conversion features require an <strong>active paid subscription</strong>.</p>
+      <p>You agree not to circumvent, disable, manipulate or otherwise interfere with any preview limit, paywall, access control, technical protection measure or other restriction that forms part of the Service.</p>
+    </section>
+
+    <section id="billing">
+      <h2><span class="num">06</span> Subscriptions &amp; billing</h2>
+      <p>Paid access to the Service is sold as a recurring subscription. Current subscription plans are:</p>
+      <ul>
+        <li><strong>Monthly</strong> — USD $12 per month, billed monthly.</li>
+        <li><strong>Annual</strong> — USD $72 per year, billed annually (equivalent to USD $6 per month).</li>
+      </ul>
+      <p>All prices are stated in <strong>United States dollars (USD)</strong>. Applicable taxes (including VAT or sales tax) will be added at checkout where required by law.</p>
+      <h3>Payment processing</h3>
+      <p>Payments are processed by <strong>Stripe, Inc.</strong> We do not collect or store your full payment card details; these are handled by Stripe in accordance with Stripe's own terms and privacy policy. By subscribing, you authorise us and Stripe to charge your chosen payment method for the applicable subscription fees.</p>
+      <h3>Automatic renewal</h3>
+      <p>Subscriptions <strong>renew automatically</strong> at the end of each billing period (monthly or annual) at the then-current price, unless you cancel before the renewal date. By subscribing, you consent to these recurring charges. We will charge your payment method on each renewal date until you cancel.</p>
+      <h3>Failed payments</h3>
+      <p>If a payment fails, we may retry the charge, suspend your paid access or cancel your subscription. You remain responsible for any outstanding amounts due.</p>
+      <h3>Price changes</h3>
+      <p>We may change subscription prices. If a price change affects your subscription, we will give you reasonable advance notice (for example, by email or a notice within the Service). Any change takes effect at your next renewal. Continued use of the Service after the new price takes effect constitutes acceptance of the revised price.</p>
+    </section>
+
+    <section id="refunds">
+      <h2><span class="num">07</span> Cancellation &amp; refunds</h2>
+      <h3>Cancelling your subscription</h3>
+      <p>You may cancel at any time from your <strong>account page</strong> or by emailing <a href="mailto:support@youconvert.com">support@youconvert.com</a>. Cancellation takes effect at the end of your current billing period — you keep paid access until then, and you will not be charged again.</p>
+      <h3>Refund policy</h3>
+      <p>If you are not happy with the Service, contact us within <strong>7 days</strong> of purchase and we will provide a <strong>full refund</strong>. Email <a href="mailto:support@youconvert.com">support@youconvert.com</a> from the address on your account and we will process eligible refunds as soon as practicable.</p>
+      <p>Refunds are not available after 7 days except where required by applicable law. Cancelling a subscription stops future charges but does not refund the current period unless you are within the 7-day window or otherwise entitled to a refund by law.</p>
+      <p>Nothing in this section limits any mandatory consumer rights that apply to you.</p>
+    </section>
+
+    <section id="your-content">
+      <h2><span class="num">08</span> Your files &amp; data responsibility</h2>
+      <p>You retain all ownership rights in the audio files and other content you process with the Service. We do not claim ownership of your content.</p>
+      <p>You are solely responsible for your files and data. This includes ensuring that you have adequate backups before and after conversion, verifying the accuracy and quality of converted outputs, and deciding which conversion mode is appropriate for your needs and security requirements.</p>
+      <p>You represent and warrant that you own, or have all necessary rights, licences and permissions to use, upload and convert any audio you process with the Service, and that doing so does not infringe any third party's intellectual property, privacy or other rights, or violate any applicable law.</p>
+      <p>For <strong>local (browser) conversions</strong>, your files remain on your device at all times. We never receive them and cannot recover them on your behalf if they are lost or corrupted on your device.</p>
+      <p>For <strong>server conversions</strong>, you grant us a limited, non-exclusive, royalty-free licence to store, transmit and process your uploaded files solely to perform the conversion you request. Files uploaded for server conversion and their outputs are deleted after processing in accordance with our <a href="privacy.html">Privacy Policy</a>, unless you save them to My Files as part of a paid subscription. We are not a backup or archival service.</p>
+      <p>You are responsible for complying with applicable data-protection laws in respect of any personal data contained in files you upload or process, including obtaining any necessary consents where required.</p>
+    </section>
+
+    <section id="acceptable">
+      <h2><span class="num">09</span> Acceptable use</h2>
+      <p>You agree not to use the Service to:</p>
+      <ul>
+        <li>convert, upload, store or distribute content that you do not have the right to use, or that infringes copyright, trademark or other intellectual property or proprietary rights;</li>
+        <li>process unlawful, defamatory, harassing, obscene, harmful or otherwise objectionable material;</li>
+        <li>upload files containing viruses, malware or other harmful code, or attempt to interfere with, disrupt, overload or compromise the security or integrity of the Service or its infrastructure;</li>
+        <li>reverse engineer, decompile, scrape, crawl or attempt to extract the source code, underlying algorithms or data of the Service, except to the extent expressly permitted by applicable law;</li>
+        <li>resell, sublicense, white-label or commercially exploit the Service or any part of it without our prior written consent;</li>
+        <li>circumvent usage limits, the preview limit, subscription controls, rate limits or any access or security measures;</li>
+        <li>use the Service in any manner that violates applicable law or regulation, including export-control or sanctions laws.</li>
+      </ul>
+      <p>We may investigate suspected breaches and take any action we consider appropriate, including removing content, suspending or terminating access and reporting unlawful activity to relevant authorities.</p>
+    </section>
+
+    <section id="ip">
+      <h2><span class="num">10</span> Intellectual property</h2>
+      <p>The Service — including its software, user interface, design, branding, documentation, text and logos, but excluding your content — is owned by us or our licensors and is protected by copyright, trade mark and other intellectual property laws.</p>
+      <p>Subject to your compliance with these Terms, we grant you a limited, non-exclusive, non-transferable, revocable licence to access and use the Service for its intended purpose. No other rights are granted. You must not copy, modify, distribute, sell or lease any part of the Service except as expressly permitted by these Terms or by law.</p>
+      <p>FFmpeg is used under open-source licences in local conversion mode. Third-party components may be subject to their own licence terms.</p>
+    </section>
+
+    <section id="third-party">
+      <h2><span class="num">11</span> Third-party services</h2>
+      <p>The Service uses third-party providers, including:</p>
+      <ul>
+        <li><strong>Stripe</strong> — payment processing;</li>
+        <li><strong>Railway</strong> (<a href="https://railway.com" target="_blank" rel="noopener noreferrer">railway.com</a>) — hosting and infrastructure;</li>
+        <li><strong>PostHog</strong> — product analytics;</li>
+        <li><strong>Third-party conversion providers</strong> — server-side audio conversion when you use server mode.</li>
+      </ul>
+      <p>Your use of third-party services may be subject to their own terms and privacy policies. We do not control them and are not responsible for their availability or performance. See our <a href="privacy.html">Privacy Policy</a> for how we share data.</p>
+    </section>
+
+    <section id="disclaimer">
+      <h2><span class="num">12</span> Disclaimers</h2>
+      <p>The Service is provided on an <strong>"as is"</strong> and <strong>"as available"</strong> basis. To the fullest extent permitted by applicable law, we disclaim all warranties, whether express, implied or statutory, including any implied warranties of satisfactory quality, fitness for a particular purpose, non-infringement and accuracy.</p>
+      <p>We do not warrant that the Service will be uninterrupted, secure or error-free, that defects will be corrected, that conversions will meet your requirements, or that any particular audio quality, file size, bitrate, format compatibility or metadata preservation will result from a conversion.</p>
+      <p>Local conversion depends on your device, browser and network capabilities. Server conversion depends on third-party infrastructure. We are not responsible for failures or limitations arising from factors outside our reasonable control.</p>
+      <p>Nothing in these Terms excludes or limits any warranty or right that cannot be excluded or limited under mandatory consumer-protection law.</p>
+    </section>
+
+    <section id="liability">
+      <h2><span class="num">13</span> Limitation of liability</h2>
+      <h3>Business users</h3>
+      <p>If you are a business user, to the maximum extent permitted by law:</p>
+      <ul>
+        <li>we shall not be liable for any indirect, incidental, special, consequential or punitive damages, or for any loss of profits, revenue, business, goodwill, data or files, whether arising in contract, tort (including negligence), breach of statutory duty or otherwise, even if we have been advised of the possibility of such loss; and</li>
+        <li>our total aggregate liability arising out of or in connection with the Service or these Terms shall not exceed the greater of (a) the total amount you paid us for the Service in the 12 months immediately preceding the event giving rise to the claim, or (b) USD $50.</li>
+      </ul>
+      <h3>Consumers</h3>
+      <p>If you are a consumer, nothing in these Terms limits or excludes our liability for death or personal injury caused by our negligence, for fraud or fraudulent misrepresentation, or for any other liability that cannot be limited or excluded under mandatory consumer-protection law.</p>
+      <p>Subject to the above, and to the fullest extent permitted by applicable law, our total liability to you for all claims arising out of or relating to the Service shall not exceed the total amount you paid us for the Service in the 12 months before the event giving rise to the claim.</p>
+      <p>We are not liable for loss of or damage to your files or data, including where files are processed locally on your device, uploaded for server conversion, or stored in My Files. You are responsible for maintaining your own backups.</p>
+      <p>Some jurisdictions do not allow certain limitations of liability, so some of the above may not apply to you.</p>
+    </section>
+
+    <section id="indemnity">
+      <h2><span class="num">14</span> Indemnity</h2>
+      <p>If you are a business user, you agree to indemnify and hold harmless YouConvert and its officers, employees and agents from and against any claims, damages, losses, liabilities and expenses (including reasonable legal fees) arising from your content, your use of the Service, or your breach of these Terms or applicable law.</p>
+      <p>This indemnity does not apply to consumers to the extent prohibited by mandatory consumer-protection law.</p>
+    </section>
+
+    <section id="termination">
+      <h2><span class="num">15</span> Termination</h2>
+      <p>You may stop using the Service at any time. You may close your account by contacting us at <a href="mailto:support@youconvert.com">support@youconvert.com</a>.</p>
+      <p>We may suspend or terminate your access to the Service, with or without notice, if you breach these Terms, if we are required to do so by law, or if we reasonably believe suspension or termination is necessary to protect the Service, our users or third parties.</p>
+      <p>On termination, your right to use the Service ends immediately. Refunds are handled under section 7. We may delete account data and My Files after termination, as described in our <a href="privacy.html">Privacy Policy</a>.</p>
+      <p>Provisions that by their nature should survive termination — including sections relating to intellectual property, disclaimers, limitation of liability, indemnity and governing law — will continue in force.</p>
+    </section>
+
+    <section id="changes">
+      <h2><span class="num">16</span> Changes to these terms</h2>
+      <p>We may update these Terms from time to time to reflect changes to the Service, our business practices or legal requirements. When we make material changes, we will take reasonable steps to notify you, such as posting a notice on the Service, sending an email to the address associated with your account, or updating the "Last updated" date at the top of this page.</p>
+      <p>Changes take effect when posted unless a later effective date is stated. If you do not agree to revised Terms, you must stop using the Service and cancel any active subscription. Your continued use of the Service after changes take effect constitutes acceptance of the revised Terms.</p>
+      <p>Where required by mandatory consumer-protection law, we will obtain your express consent to material changes that adversely affect your rights.</p>
+    </section>
+
+    <section id="law">
+      <h2><span class="num">17</span> Governing law</h2>
+      <p>These Terms and any dispute or claim arising out of or in connection with them or the Service are governed by the laws of <strong>England and Wales</strong>, without regard to conflict-of-law principles.</p>
+      <p>If you are a business user, you agree that the courts of England and Wales shall have exclusive jurisdiction to settle any dispute arising out of or in connection with these Terms or the Service.</p>
+      <p>If you are a consumer resident in the United Kingdom, you may bring proceedings in the courts of England and Wales or in the courts of the country where you live.</p>
+      <p>If you are a consumer resident in the European Economic Area, you may bring proceedings in the courts of your country of residence where permitted by applicable law, and you benefit from any mandatory protections of the laws of your country of residence.</p>
+    </section>
+
+    <section id="contact">
+      <h2><span class="num">18</span> Contact</h2>
+      <p>Questions about these Terms, billing, refunds or your account? Contact us at <a href="mailto:support@youconvert.com">support@youconvert.com</a>.</p>
+    </section>
+
+  </main>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot-in">
+    <span>© 2026 YouConvert</span>
+    <div class="foot-links">
+      <a href="/">Converter</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* highlight the active section in the table of contents */
+  const links=[...document.querySelectorAll('.toc a')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const a=map.get(e.target.id);
+        if(a)a.classList.add('active');
+      }
+    });
+  },{rootMargin:'-40% 0px -55% 0px'});
+  document.querySelectorAll('.content section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

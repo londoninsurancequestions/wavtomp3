@@ -4,7 +4,21 @@ import {
   savePendingCheckout,
   loadPendingCheckout,
   clearPendingCheckout,
+  loadPendingFiles,
+  clearPendingFiles,
+  savePendingFiles,
 } from '/public/session-store.js';
+import {
+  getInputFormat,
+  getRoute,
+  INPUT_DETECTORS,
+  findRoute,
+} from '/public/conversion-formats.js';
+
+const inputSlug = document.documentElement.dataset.inputFormat || 'wav';
+const outputSlug = document.documentElement.dataset.outputFormat || 'mp3';
+const inputFormat = getInputFormat(inputSlug);
+const outputFormat = getRoute(inputSlug, outputSlug);
 
 /* ---------- state ---------- */
 let conversionMode = 'local';
@@ -317,6 +331,25 @@ function parseWav(file, cb) {
   reader.readAsArrayBuffer(file.slice(0, 8192));
 }
 
+function parseMediaDuration(file, cb) {
+  const audio = new Audio();
+  const url = URL.createObjectURL(file);
+  audio.addEventListener('loadedmetadata', () => {
+    cb({ sampleRate: 0, duration: audio.duration || 0 });
+    URL.revokeObjectURL(url);
+  });
+  audio.addEventListener('error', () => {
+    cb(null);
+    URL.revokeObjectURL(url);
+  });
+  audio.src = url;
+}
+
+function parseInputFile(file, cb) {
+  if (inputFormat.slug === 'wav') return parseWav(file, cb);
+  return parseMediaDuration(file, cb);
+}
+
 function currentBitrate() {
   const on = document.querySelector('#bitrate .chip.on');
   return on ? parseInt(on.textContent) : 256;
@@ -347,36 +380,158 @@ function scrollToConvertButton() {
   });
 }
 
-function addFiles(list) {
-  const countBefore = fileStore.length;
-  [...list].forEach((f) => {
-    if (!/\.wave?$/i.test(f.name) && !/wav/i.test(f.type)) return;
-    const item = {
-      file: f,
-      duration: 0,
-      sampleRate: 0,
-      url: null,
-      blob: null,
-      state: 'pending',
-      unlocked: subscriptionActive,
-      audio: null,
-      outputName: f.name.replace(/\.wave?$/i, '') + '.mp3',
-      outputSize: 0,
-    };
-    fileStore.push(item);
-    parseWav(f, (info) => {
-      if (info) {
-        item.duration = info.duration;
-        item.sampleRate = info.sampleRate;
-      }
-      renderFiles();
-    });
+let formatRedirectPending = null;
+
+function bucketFilesByInput(files) {
+  return INPUT_DETECTORS.map((fmt) => ({
+    fmt,
+    files: files.filter((f) => fmt.matches(f)),
+  })).filter((b) => b.files.length > 0);
+}
+
+function pushFileToStore(f) {
+  const item = {
+    file: f,
+    duration: 0,
+    sampleRate: 0,
+    url: null,
+    blob: null,
+    state: 'pending',
+    unlocked: subscriptionActive,
+    audio: null,
+    outputName: inputFormat.stripExt(f.name) + '.' + outputFormat.ext,
+    outputSize: 0,
+  };
+  fileStore.push(item);
+  parseInputFile(f, (info) => {
+    if (info) {
+      item.duration = info.duration;
+      item.sampleRate = info.sampleRate;
+    }
+    renderFiles();
   });
+}
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showFormatNoticeModal(html, { showGo = false, title = 'Different format detected' } = {}) {
+  formatRedirectPending = null;
+  const titleEl = document.getElementById('formatModalTitle');
+  if (titleEl) titleEl.textContent = title;
+  document.getElementById('formatModalSub').innerHTML = html;
+  document.getElementById('formatModalGo').hidden = !showGo;
+  document.getElementById('formatOverlay').classList.add('show');
+}
+
+function showFormatRedirectModal({ files, detectedFmt, route }) {
+  document.getElementById('formatModalTitle').textContent = 'Different format detected';
+  formatRedirectPending = { files, detectedFmt, route };
+  const count = files.length;
+  const fileWord = count === 1 ? 'file' : 'files';
+  document.getElementById('formatModalSub').innerHTML =
+    `This looks like <b>${detectedFmt.label}</b> — ${count} ${fileWord} on a page for <b>${inputFormat.label} to ${outputFormat.label}</b>. Switch to the matching converter and take your files with you?`;
+  const goBtn = document.getElementById('formatModalGo');
+  goBtn.hidden = false;
+  goBtn.disabled = false;
+  goBtn.textContent = `Go to ${detectedFmt.label} → ${outputFormat.label}`;
+  document.getElementById('formatOverlay').classList.add('show');
+}
+
+window.closeFormatModal = function closeFormatModal() {
+  document.getElementById('formatOverlay').classList.remove('show');
+  formatRedirectPending = null;
+  const goBtn = document.getElementById('formatModalGo');
+  if (goBtn) {
+    goBtn.hidden = false;
+    goBtn.disabled = false;
+  }
+};
+
+window.goToFormatRedirect = async function goToFormatRedirect() {
+  if (!formatRedirectPending) return;
+  const { files, detectedFmt, route } = formatRedirectPending;
+  const goBtn = document.getElementById('formatModalGo');
+  goBtn.disabled = true;
+  goBtn.textContent = 'Saving files…';
+  try {
+    await savePendingFiles(files, detectedFmt.slug);
+    window.location.href = route.path;
+  } catch (err) {
+    console.error('Could not stage files for redirect:', err);
+    goBtn.disabled = false;
+    goBtn.textContent = `Go to ${detectedFmt.label} → ${outputFormat.label}`;
+    document.getElementById('formatModalSub').innerHTML =
+      '<b>Could not save files.</b> Try again, or open the converter and upload there manually.';
+  }
+};
+
+function isRecognizedAudioFile(file) {
+  return INPUT_DETECTORS.some((fmt) => fmt.matches(file));
+}
+
+function showUnsupportedModal(files) {
+  const fileRef =
+    files.length === 1
+      ? `<b>${escapeHtml(files[0].name)}</b>`
+      : `<b>${files.length} files</b>`;
+  showFormatNoticeModal(
+    `Unfortunately this file type isn't presently supported. ${fileRef} couldn't be added.<p class="modal-supported">We support WAV, MP3, M4A, AAC, OGG, and WMA.</p>`,
+    { title: 'Unsupported file type' }
+  );
+}
+
+function handleMismatchedFiles(otherFiles) {
+  if (!otherFiles.length) return;
+
+  const unknown = otherFiles.filter((f) => !isRecognizedAudioFile(f));
+  const recognized = otherFiles.filter((f) => isRecognizedAudioFile(f));
+
+  if (unknown.length > 0) {
+    showUnsupportedModal(unknown);
+    return;
+  }
+
+  const buckets = bucketFilesByInput(recognized);
+
+  if (buckets.length > 1) {
+    showFormatNoticeModal(
+      '<b>Mixed formats detected.</b> Please drop only one format at a time, or use a converter that matches your files.'
+    );
+    return;
+  }
+
+  const { fmt: detectedFmt, files } = buckets[0];
+  if (detectedFmt.slug === inputSlug) return;
+
+  const route = findRoute(detectedFmt.slug, outputSlug);
+  if (!route) {
+    showFormatNoticeModal(
+      `This looks like <b>${detectedFmt.label}</b>, but we don't have a <b>${detectedFmt.label} to ${outputFormat.label}</b> converter. <a href="/" style="color:var(--signal-2)">Browse all converters</a>.`
+    );
+    return;
+  }
+
+  showFormatRedirectModal({ files, detectedFmt, route });
+}
+
+function addFiles(list) {
+  const files = [...list];
+  const matching = files.filter((f) => inputFormat.matches(f));
+  const other = files.filter((f) => !inputFormat.matches(f));
+  const countBefore = fileStore.length;
+
+  matching.forEach(pushFileToStore);
   converted = false;
   renderFiles();
-  if (fileStore.length > countBefore) {
-    scrollToConvertButton();
-  }
+  if (fileStore.length > countBefore) scrollToConvertButton();
+
+  handleMismatchedFiles(other);
 }
 
 window.removeFile = function removeFile(i) {
@@ -426,14 +581,14 @@ function renderFiles() {
         <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="20" cy="16" r="3"/></svg></div>
         <div class="meta">
           <div class="nm">${item.file.name}</div>
-          <div class="stats">${fmtBytes(item.file.size)} WAV <span class="arrow">→</span> MP3 · ${fmtTime(item.duration)}${item.sampleRate ? ' · ' + (item.sampleRate / 1000).toFixed(1) + 'kHz' : ''}</div>
+          <div class="stats">${fmtBytes(item.file.size)} ${inputFormat.label} <span class="arrow">→</span> ${outputFormat.label} · ${fmtTime(item.duration)}${item.sampleRate ? ' · ' + (item.sampleRate / 1000).toFixed(1) + 'kHz' : ''}</div>
         </div>
         <div class="est">${estBytes ? '≈ ' + fmtBytes(estBytes) : '—'}<small>at ${br}k</small></div>
         <button class="rm" data-rm="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>`;
       row.querySelector('[data-rm]').addEventListener('click', () => removeFile(i));
       filesEl.appendChild(row);
     } else {
-      const base = item.outputName.replace(/\.mp3$/i, '');
+      const base = item.outputName.replace(new RegExp('\\.' + outputFormat.ext + '$', 'i'), '');
       const cap = item.unlocked
         ? item.duration || 0
         : Math.min(30, item.duration || 30);
@@ -475,7 +630,7 @@ function renderFiles() {
         <div class="rc-actions">
           ${
             item.unlocked
-              ? `<a class="dl-unlocked" href="${item.url}" download="${item.outputName}">${SVG_DL} Download MP3</a>
+              ? `<a class="dl-unlocked" href="${item.url}" download="${item.outputName}">${SVG_DL} Download ${outputFormat.label}</a>
                  <button class="btn-clear" data-clear="${i}">Clear from list</button>`
               : `<button class="btn-unlock" data-unlock="${i}">${lockSvg} Unlock conversions</button>
                  <button class="dl-locked" data-unlock="${i}">${lockSvg} Unlock</button>
@@ -501,7 +656,7 @@ function updateSummary() {
   const sum = document.getElementById('summary');
   if (fileStore.length === 0) {
     converted = false;
-    sum.innerHTML = '<b>No files yet</b> — drop a WAV above to get started.';
+    sum.innerHTML = `<b>No files yet</b> — drop ${inputFormat.label} files above to get started.`;
     refreshActionButton();
     return;
   }
@@ -518,7 +673,7 @@ function updateSummary() {
         : `<b>All unlocked.</b> Convert and export as much as you need.`;
   } else if (conversionMode === 'server') {
     const totalIn = fileStore.reduce((a, f) => a + f.file.size, 0);
-    sum.innerHTML = `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''}</b> · server mode · ${fmtBytes(totalIn)} → MP3`;
+    sum.innerHTML = `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''}</b> · server mode · ${fmtBytes(totalIn)} → ${outputFormat.label}`;
   } else {
     const totalIn = fileStore.reduce((a, f) => a + f.file.size, 0);
     const totalDur = fileStore.reduce((a, f) => a + (f.duration || 0), 0);
@@ -573,7 +728,8 @@ async function loadFfmpeg(onProgress) {
 }
 
 function buildFfmpegArgs(opts, duration) {
-  const args = ['-i', 'input.wav'];
+  const args = ['-i', `input.${inputFormat.ext}`];
+  const outFile = `output.${outputFormat.ext}`;
 
   if (opts.trim && opts.trimStart != null) args.push('-ss', String(opts.trimStart));
   if (opts.trim && opts.trimEnd != null) args.push('-to', String(opts.trimEnd));
@@ -596,40 +752,62 @@ function buildFfmpegArgs(opts, duration) {
   if (opts.channels === 'Mono') args.push('-ac', '1');
   else args.push('-ac', '2');
 
-  args.push('-codec:a', 'libmp3lame');
+  if (outputFormat.audioOnly) args.push('-vn');
 
-  const mode = opts.encodingMode;
-  if (mode === 'CBR') {
-    args.push('-b:a', `${opts.bitrate}k`);
-  } else if (mode === 'VBR (V0)') {
-    args.push('-q:a', '0');
-  } else if (mode === 'VBR (V2)') {
-    args.push('-q:a', '2');
-  } else if (mode === 'ABR') {
-    args.push('-abr', `${opts.bitrate}k`);
+  if (outputFormat.isPcm) {
+    args.push('-codec:a', 'pcm_s16le');
+  } else {
+    args.push('-codec:a', outputFormat.codec);
+    if (outputFormat.lossless) {
+      args.push('-compression_level', '8');
+    } else if (outputFormat.codec === 'libmp3lame') {
+    const mode = opts.encodingMode;
+    if (mode === 'CBR') {
+      args.push('-b:a', `${opts.bitrate}k`);
+    } else if (mode === 'VBR (V0)') {
+      args.push('-q:a', '0');
+    } else if (mode === 'VBR (V2)') {
+      args.push('-q:a', '2');
+    } else if (mode === 'ABR') {
+      args.push('-abr', `${opts.bitrate}k`);
+    }
+    } else if (outputFormat.codec === 'libvorbis') {
+      args.push('-q:a', '6');
+    } else {
+      args.push('-b:a', `${opts.bitrate}k`);
+    }
   }
+
+  if (outputFormat.container) args.push('-movflags', '+faststart');
 
   if (opts.title) args.push('-metadata', `title=${opts.title}`);
   if (opts.artist) args.push('-metadata', `artist=${opts.artist}`);
 
-  args.push('-y', 'output.mp3');
-  return args;
+  args.push('-y', outFile);
+  return { args, outFile };
 }
 
 async function convertLocal(item, opts, onProgress) {
+  if (inputFormat.localSupported === false) {
+    throw new Error(`${inputFormat.label} conversion requires server mode in this browser`);
+  }
+  if (!outputFormat.localSupported) {
+    throw new Error(`${outputFormat.label} conversion requires server mode in this browser`);
+  }
+
   const ff = await loadFfmpeg(onProgress);
-  const inputName = 'input.wav';
+  const inputName = `input.${inputFormat.ext}`;
   const data = await fetchFile(item.file);
   await ff.writeFile(inputName, data);
 
-  const args = buildFfmpegArgs(opts, item.duration);
+  const { args, outFile } = buildFfmpegArgs(opts, item.duration);
   await ff.exec(args);
 
-  const output = await ff.readFile('output.mp3');
+  const output = await ff.readFile(outFile);
   await ff.deleteFile(inputName);
-  await ff.deleteFile('output.mp3');
+  await ff.deleteFile(outFile);
 
-  const blob = new Blob([output.buffer], { type: 'audio/mpeg' });
+  const blob = new Blob([output.buffer], { type: outputFormat.mime });
   return blob;
 }
 
@@ -641,6 +819,7 @@ async function convertServer(item, onProgress) {
   onProgress(5);
   const form = new FormData();
   form.append('file', item.file, item.file.name);
+  form.append('target_format', outputFormat.zamzar);
 
   const startRes = await fetch('/api/convert/server', { method: 'POST', body: form });
   if (!startRes.ok) {
@@ -686,7 +865,9 @@ async function convertServer(item, onProgress) {
   }
 
   onProgress(90);
-  const dlRes = await fetch(`/api/convert/download/${encodeURIComponent(fileToken)}`);
+  const dlRes = await fetch(
+    `/api/convert/download/${encodeURIComponent(fileToken)}?ext=${encodeURIComponent(outputFormat.ext)}`
+  );
   if (!dlRes.ok) throw new Error('Failed to download converted file');
   const blob = await dlRes.blob();
   onProgress(100);
@@ -713,7 +894,14 @@ async function saveConversionToLibrary(item, mode) {
     const form = new FormData();
     form.append('file', item.blob, item.outputName);
     form.append('mode', mode);
-    form.append('originalName', item.file?.name || item.outputName.replace(/\.mp3$/i, '.wav'));
+    form.append(
+      'originalName',
+      item.file?.name ||
+        item.outputName.replace(
+          new RegExp('\\.' + outputFormat.ext + '$', 'i'),
+          '.' + inputFormat.ext
+        )
+    );
     form.append('outputName', item.outputName);
     form.append('duration', String(item.duration || 0));
 
@@ -1025,15 +1213,15 @@ window.goToStripeCheckout = async function goToStripeCheckout() {
   const redirecting = document.getElementById('redirecting');
   redirecting.classList.add('show');
 
+  const returnTo = window.location.pathname + window.location.search;
+
   try {
-    if (converted) {
-      await savePendingCheckout({ conversionMode, items: fileStore });
-    }
+    await savePendingCheckout({ conversionMode, items: fileStore, returnTo });
 
     const res = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan: selectedPlan }),
+      body: JSON.stringify({ plan: selectedPlan, returnTo }),
     });
 
     if (!res.ok) {
@@ -1097,7 +1285,9 @@ async function handlePostAuthReturn() {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key !== 'Escape') return;
+  closeFormatModal();
+  closeModal();
 });
 
 /* ---------- init ---------- */
@@ -1112,8 +1302,50 @@ async function handleCancelledCheckout() {
   return restored;
 }
 
+function configureFormatUI() {
+  if (outputFormat.lossless || outputFormat.isPcm) {
+    document.getElementById('bitrate')?.closest('.opt')?.setAttribute('hidden', '');
+    document.getElementById('mode2')?.closest('.opt')?.setAttribute('hidden', '');
+  }
+
+  const metaLabel = document.querySelector('#metaTitle')?.closest('.opt')?.querySelector('label');
+  if (metaLabel && outputFormat.slug !== 'mp3') {
+    metaLabel.innerHTML = 'Metadata <span class="tag">-metadata</span>';
+  }
+
+  const needsServer =
+    outputFormat.localSupported === false || inputFormat.localSupported === false;
+
+  if (needsServer) {
+    window.setMode('server');
+    const modeText = document.getElementById('modeText');
+    if (modeText) {
+      const reason =
+        inputFormat.localSupported === false
+          ? `${inputFormat.label} decoding runs on our servers`
+          : `${outputFormat.label} encoding runs on our servers`;
+      modeText.innerHTML = `<b>Server mode required.</b> ${reason} — files are deleted after download.`;
+    }
+    document.querySelector('[data-mode="local"]')?.setAttribute('disabled', '');
+  }
+}
+
+async function loadStagedHomeFiles() {
+  try {
+    const pending = await loadPendingFiles();
+    if (!pending?.files?.length) return;
+    if (pending.inputSlug && pending.inputSlug !== inputSlug) return;
+    await clearPendingFiles();
+    addFiles(pending.files);
+  } catch (err) {
+    console.warn('Could not restore staged files:', err);
+  }
+}
+
 async function init() {
+  configureFormatUI();
   applyPreset('music');
+  await loadStagedHomeFiles();
   await checkSubscriptionOnLoad();
   await handleCancelledCheckout();
 

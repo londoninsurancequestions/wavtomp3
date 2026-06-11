@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{{FAVICON}}
+<title>Testimonials — YouConvert.com</title>
+<meta name="description" content="See what creators, podcasters, and audio professionals say about YouConvert — fast, private audio conversion in the browser or on our servers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a08;--bg-2:#100e0b;--surface:#15120d;--surface-2:#1d1812;
+    --line:rgba(255,236,210,0.09);--line-strong:rgba(255,236,210,0.16);
+    --text:#f6efe2;--muted:#a89e8c;--faint:#6f675a;
+    --signal:#ff6a2b;--signal-2:#ffb13b;--mint:#5ce0b6;--mint-dim:rgba(92,224,182,0.14);
+    --amber-dim:rgba(255,106,43,0.13);
+    --display:"Bricolage Grotesque",serif;--body:"Hanken Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+    --r:18px;--maxw:1180px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;position:relative}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(900px 500px at 78% -8%,rgba(255,106,43,0.16),transparent 60%),
+      radial-gradient(700px 600px at 8% 12%,rgba(92,224,182,0.07),transparent 55%),
+      radial-gradient(1000px 800px at 50% 120%,rgba(255,177,59,0.06),transparent 60%)}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+  a{color:inherit}
+
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:linear-gradient(to bottom,rgba(11,10,8,0.92),rgba(11,10,8,0.6));border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-0.02em;text-decoration:none;color:inherit}
+  .brand .io{color:var(--signal)}
+  .logo-mark{display:flex;align-items:flex-end;gap:2.5px;height:22px}
+  .logo-mark i{width:3px;border-radius:2px;background:var(--signal);display:block;animation:bob 1.4s ease-in-out infinite}
+  .logo-mark i:nth-child(1){height:8px}.logo-mark i:nth-child(2){height:18px;background:var(--signal-2)}
+  .logo-mark i:nth-child(3){height:12px}.logo-mark i:nth-child(4){height:22px;background:var(--signal-2)}.logo-mark i:nth-child(5){height:9px}
+  @keyframes bob{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1)}}
+  .nav-back{font-family:var(--mono);font-size:13px;color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+  .nav-back:hover{color:var(--text)}
+  .nav-back svg{width:14px;height:14px}
+
+  .hero{padding:74px 0 20px;text-align:center}
+  .eyebrow{display:inline-flex;font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--signal-2);
+    border:1px solid var(--line-strong);padding:7px 15px;border-radius:100px;background:rgba(255,255,255,0.02)}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(38px,6vw,58px);line-height:1.02;letter-spacing:-0.035em;margin:22px 0 0}
+  .hero p.sub{max-width:620px;margin:20px auto 0;font-size:18px;color:var(--muted);line-height:1.55}
+
+  .stats{display:flex;justify-content:center;flex-wrap:wrap;gap:28px;margin-top:40px}
+  .stat{text-align:center;min-width:120px}
+  .stat b{display:block;font-family:var(--display);font-size:32px;font-weight:800;color:var(--signal-2);letter-spacing:-0.02em}
+  .stat span{font-family:var(--mono);font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+
+  .block{padding:56px 0 72px}
+  .tst-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:980px){.tst-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.tst-grid{grid-template-columns:1fr}}
+  .tst{border:1px solid var(--line);border-radius:var(--r);padding:28px;background:linear-gradient(180deg,var(--surface),var(--bg-2));
+    display:flex;flex-direction:column;gap:18px}
+  .tst .quote-mark{font-family:var(--display);font-size:60px;line-height:.5;color:var(--signal);opacity:.5;height:24px}
+  .tst p{font-size:15.5px;line-height:1.6;color:var(--text);flex:1}
+  .tst .who{display:flex;align-items:center;gap:13px}
+  .tst .av{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:var(--display);
+    font-weight:700;font-size:17px;color:#1a1208;background:linear-gradient(135deg,var(--signal),var(--signal-2))}
+  .tst .av.m2{background:linear-gradient(135deg,#7c8cff,var(--mint))}
+  .tst .av.m3{background:linear-gradient(135deg,var(--mint),var(--signal-2))}
+  .tst .av.m4{background:linear-gradient(135deg,#ff8a5c,#ff6a8a)}
+  .tst .av.m5{background:linear-gradient(135deg,#6ec8ff,#7c8cff)}
+  .tst .who .nm{font-weight:700;font-size:14.5px}
+  .tst .who .rl{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  .stars{display:flex;gap:2px;color:var(--signal-2)}
+  .stars svg{width:14px;height:14px}
+
+  .cta{margin:0 auto 72px;max-width:var(--maxw);padding:0 28px}
+  .cta-in{border:1px solid var(--line-strong);border-radius:28px;padding:52px 36px;text-align:center;
+    background:linear-gradient(180deg,rgba(21,18,13,0.95),rgba(16,14,11,0.98))}
+  .cta-in h2{font-family:var(--display);font-weight:700;font-size:clamp(26px,4vw,36px);letter-spacing:-0.03em}
+  .cta-in p{color:var(--muted);margin-top:12px;font-size:16px}
+  .btn-go{display:inline-flex;align-items:center;gap:10px;margin-top:24px;padding:14px 26px;border-radius:14px;
+    background:linear-gradient(135deg,var(--signal),var(--signal-2));color:#1a1208;font-weight:700;font-size:15px;
+    text-decoration:none;transition:transform .2s,box-shadow .2s}
+  .btn-go:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(255,106,43,0.25)}
+  .btn-go svg{width:18px;height:18px}
+
+  footer{border-top:1px solid var(--line);padding:42px 0 56px}
+  .foot-in{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+    font-family:var(--mono);font-size:12.5px;color:var(--faint)}
+  .foot-links{display:flex;gap:22px}
+  .foot-links a{color:var(--muted);text-decoration:none}
+  .foot-links a:hover{color:var(--text)}
+</style>
+{{POSTHOG_SNIPPET}}
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a href="/" class="brand">
+      <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
+      YouConvert<span class="io">.com</span>
+    </a>
+    <a href="/" class="nav-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m0 0l6 6m-6-6l6-6"/></svg>
+      Back to converter
+    </a>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <span class="eyebrow">Loved by creators</span>
+  <h1>People who stopped uploading.</h1>
+  <p class="sub">Mix engineers, podcast producers, educators, and indie studios use YouConvert for fast, private audio conversion — locally or on our servers.</p>
+  <div class="stats">
+    <div class="stat"><b>4.9</b><span>Average rating</span></div>
+    <div class="stat"><b>12</b><span>Formats supported</span></div>
+    <div class="stat"><b>0</b><span>Uploads in local mode</span></div>
+  </div>
+</header>
+
+<section class="block wrap">
+  <div class="tst-grid" id="tstGrid"></div>
+</section>
+
+<div class="cta">
+  <div class="cta-in">
+    <h2>Try it yourself — no account required.</h2>
+    <p>Drop a file, pick your formats, and convert in your browser. Flip to server mode when you need batch power.</p>
+    <a href="/" class="btn-go">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      Start converting
+    </a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap foot-in">
+    <span>© 2026 YouConvert.com</span>
+    <div class="foot-links">
+      <a href="/">Home</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+  import { TESTIMONIALS, testimonialCardHtml } from '/public/testimonials.js';
+  document.getElementById('tstGrid').innerHTML = TESTIMONIALS.map(testimonialCardHtml).join('');
+</script>
+</body>
+</html>

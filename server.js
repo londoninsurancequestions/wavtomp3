@@ -31,6 +31,8 @@ import { sealJobId, sealFileId, openJobToken, openFileToken } from './lib/conver
 import {
   hasActiveSubscription,
   getSubscriptionSummary,
+  cancelSubscriptionAtPeriodEnd,
+  reactivateSubscription,
   resolvePaidCheckout,
   findStripeCustomerByEmail,
   listCustomerInvoices,
@@ -278,9 +280,14 @@ app.get('/api/auth/me', async (req, res) => {
     return res.json({ user: null, subscriptionActive: false });
   }
 
-  const subscription = stripe
-    ? await getSubscriptionSummary(stripe, user.stripe_customer_id)
-    : null;
+  let subscription = null;
+  if (stripe) {
+    try {
+      subscription = await getSubscriptionSummary(stripe, user.stripe_customer_id);
+    } catch (err) {
+      console.error('Subscription lookup error:', err.message);
+    }
+  }
 
   res.json({
     user: publicUser(user),
@@ -338,6 +345,42 @@ app.get('/api/account/invoices', requireAuth, async (req, res) => {
   }
 });
 
+app.post('/api/account/cancel-subscription', requireAuth, async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
+
+  const user = findUserById(req.userId);
+  if (!user?.stripe_customer_id) {
+    return res.status(400).json({ error: 'No subscription linked to this account' });
+  }
+
+  try {
+    const result = await cancelSubscriptionAtPeriodEnd(stripe, user.stripe_customer_id);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json({ ok: true, subscription: result.subscription });
+  } catch (err) {
+    console.error('Cancel subscription error:', err);
+    res.status(500).json({ error: err.message || 'Failed to cancel subscription' });
+  }
+});
+
+app.post('/api/account/reactivate-subscription', requireAuth, async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
+
+  const user = findUserById(req.userId);
+  if (!user?.stripe_customer_id) {
+    return res.status(400).json({ error: 'No subscription linked to this account' });
+  }
+
+  try {
+    const result = await reactivateSubscription(stripe, user.stripe_customer_id);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json({ ok: true, subscription: result.subscription });
+  } catch (err) {
+    console.error('Reactivate subscription error:', err);
+    res.status(500).json({ error: err.message || 'Failed to reactivate subscription' });
+  }
+});
+
 /* ---------- My files library ---------- */
 app.post('/api/files', requireAuth, libraryUpload.single('file'), (req, res) => {
   if (!req.file) {
@@ -392,7 +435,7 @@ app.post('/api/files/download-batch', requireAuth, (req, res) => {
 
   const stamp = new Date().toISOString().slice(0, 10);
   res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', `attachment; filename="wavtomp3-${stamp}.zip"`);
+  res.setHeader('Content-Disposition', `attachment; filename="youconvert-${stamp}.zip"`);
 
   const archive = new ZipArchive({ zlib: { level: 5 } });
   archive.on('error', (err) => {
@@ -456,7 +499,8 @@ app.post('/api/convert/server', upload.single('file'), async (req, res) => {
       new Blob([req.file.buffer], { type: req.file.mimetype || 'audio/wav' }),
       req.file.originalname
     );
-    form.append('target_format', 'mp3');
+    const targetFormat = (req.body.target_format || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '');
+    form.append('target_format', targetFormat || 'mp3');
 
     const jobRes = await zamzarFetch(`${ZAMZAR_API_BASE}/jobs`, {
       method: 'POST',
@@ -519,8 +563,19 @@ app.get('/api/convert/download/:token', async (req, res) => {
       `${ZAMZAR_API_BASE}/files/${fileId}/content`
     );
     const buffer = Buffer.from(await fileRes.arrayBuffer());
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Disposition', 'attachment; filename="converted.mp3"');
+    const ext = (req.query.ext || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp3';
+    const mimeTypes = {
+      mp3: 'audio/mpeg',
+      aac: 'audio/aac',
+      flac: 'audio/flac',
+      m4a: 'audio/mp4',
+      m4r: 'audio/mp4',
+      mp4: 'audio/mp4',
+      ogg: 'audio/ogg',
+      wma: 'audio/x-ms-wma',
+    };
+    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="converted.${ext}"`);
     res.send(buffer);
   } catch (err) {
     console.error('Zamzar download error:', err);
@@ -528,13 +583,20 @@ app.get('/api/convert/download/:token', async (req, res) => {
   }
 });
 
+function safeReturnPath(returnTo) {
+  if (!returnTo || typeof returnTo !== 'string') return '/';
+  const path = returnTo.split('#')[0];
+  if (!path.startsWith('/') || path.startsWith('//') || path.includes('://')) return '/';
+  return path;
+}
+
 /* ---------- Stripe checkout ---------- */
 app.post('/api/create-checkout-session', async (req, res) => {
   if (!stripe) {
     return res.status(503).json({ error: 'Stripe not configured' });
   }
 
-  const { plan } = req.body;
+  const { plan, returnTo } = req.body;
   const priceId =
     plan === 'annual' ? process.env.STRIPE_PRICE_ANNUAL : process.env.STRIPE_PRICE_MONTHLY;
 
@@ -542,12 +604,15 @@ app.post('/api/create-checkout-session', async (req, res) => {
     return res.status(503).json({ error: 'Stripe price IDs not configured' });
   }
 
+  const returnPath = safeReturnPath(returnTo);
+  const returnQuery = encodeURIComponent(returnPath);
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${BASE_URL}/create-account.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/?checkout=cancelled`,
+      success_url: `${BASE_URL}/create-account.html?session_id={CHECKOUT_SESSION_ID}&return_to=${returnQuery}`,
+      cancel_url: `${BASE_URL}${returnPath}${returnPath.includes('?') ? '&' : '?'}checkout=cancelled`,
       allow_promotion_codes: true,
     });
     res.json({ url: session.url });
@@ -613,5 +678,5 @@ app.get('/api/config', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`WAVtoMP3 server running at ${BASE_URL}`);
+  console.log(`YouConvert server running at ${BASE_URL}`);
 });

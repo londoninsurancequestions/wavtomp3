@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en" data-input-format="ogg" data-output-format="m4r">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+
+<title>YouConvert.com — Convert OGG to M4R, in your browser or on our servers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a08;
+    --bg-2:#100e0b;
+    --surface:#15120d;
+    --surface-2:#1d1812;
+    --line:rgba(255,236,210,0.09);
+    --line-strong:rgba(255,236,210,0.16);
+    --text:#f6efe2;
+    --muted:#a89e8c;
+    --faint:#6f675a;
+    --signal:#ff6a2b;
+    --signal-2:#ffb13b;
+    --mint:#5ce0b6;
+    --mint-dim:rgba(92,224,182,0.14);
+    --amber-dim:rgba(255,106,43,0.13);
+    --display:"Bricolage Grotesque",serif;
+    --body:"Hanken Grotesk",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+    --r:18px;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--body);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+  }
+  /* grain + glow atmosphere */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(900px 500px at 78% -8%, rgba(255,106,43,0.16), transparent 60%),
+      radial-gradient(700px 600px at 8% 12%, rgba(92,224,182,0.07), transparent 55%),
+      radial-gradient(1000px 800px at 50% 120%, rgba(255,177,59,0.06), transparent 60%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:linear-gradient(to bottom, rgba(11,10,8,0.92), rgba(11,10,8,0.6));
+    border-bottom:1px solid var(--line);}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-0.02em;text-decoration:none;color:inherit}
+  .brand .io{color:var(--signal)}
+  .logo-mark{display:flex;align-items:flex-end;gap:2.5px;height:22px}
+  .logo-mark i{width:3px;border-radius:2px;background:var(--signal);display:block;animation:bob 1.4s ease-in-out infinite}
+  .logo-mark i:nth-child(1){height:8px;animation-delay:0s}
+  .logo-mark i:nth-child(2){height:18px;animation-delay:.15s;background:var(--signal-2)}
+  .logo-mark i:nth-child(3){height:12px;animation-delay:.3s}
+  .logo-mark i:nth-child(4){height:22px;animation-delay:.45s;background:var(--signal-2)}
+  .logo-mark i:nth-child(5){height:9px;animation-delay:.6s}
+  @keyframes bob{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1)}}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a{color:var(--muted);text-decoration:none;font-size:14.5px;font-weight:500;transition:color .2s}
+  .nav-links a:hover{color:var(--text)}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;font-weight:500;
+    padding:6px 12px;border-radius:100px;border:1px solid var(--line-strong);color:var(--mint);background:var(--mint-dim)}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint)}
+  .nav-toggle{display:none;flex-direction:column;justify-content:center;gap:5px;width:44px;height:44px;padding:10px;
+    border:1px solid var(--line-strong);border-radius:12px;background:rgba(255,255,255,.03);cursor:pointer;flex-shrink:0}
+  .nav-toggle span{display:block;height:2px;width:100%;background:var(--text);border-radius:2px;transition:transform .25s,opacity .2s}
+  .nav-toggle.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .nav-toggle.open span:nth-child(2){opacity:0}
+  .nav-toggle.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  @media(max-width:820px){
+    .nav-toggle{display:flex}
+    .pill-desktop{display:none !important}
+    .nav-links{display:none;position:fixed;top:70px;left:0;right:0;z-index:49;flex-direction:column;align-items:stretch;gap:0;
+      padding:10px 0 18px;background:rgba(11,10,8,.97);border-bottom:1px solid var(--line);backdrop-filter:blur(14px);
+      box-shadow:0 24px 48px rgba(0,0,0,.35)}
+    .nav-links.open{display:flex}
+    .nav-links a{padding:14px 28px;font-size:16px}
+    body.nav-open{overflow:hidden}
+  }
+
+  /* ---------- hero ---------- */
+  .hero{padding:74px 0 40px;text-align:center;position:relative}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--signal-2);border:1px solid var(--line-strong);padding:7px 15px;border-radius:100px;
+    background:rgba(255,255,255,0.02)}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(40px,7vw,76px);line-height:0.98;letter-spacing:-0.035em;
+    margin:26px 0 0;}
+  h1 .grad{background:linear-gradient(105deg,var(--signal),var(--signal-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.sub{max-width:620px;margin:24px auto 0;font-size:18.5px;color:var(--muted);line-height:1.55}
+  .hero p.sub b{color:var(--text);font-weight:600}
+
+  /* fade-up reveal */
+  .reveal{opacity:0;transform:translateY(22px);animation:up .8s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes up{to{opacity:1;transform:none}}
+  .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.28s}.d4{animation-delay:.42s}.d5{animation-delay:.55s}
+
+  /* ---------- converter ---------- */
+  .converter{margin:46px auto 0;max-width:880px;position:relative}
+  .console{border:1px solid var(--line-strong);border-radius:26px;overflow:hidden;
+    background:
+      linear-gradient(180deg, rgba(29,24,18,0.9), rgba(16,14,11,0.94));
+    box-shadow:0 40px 90px -30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,236,210,0.06);}
+  .console-top{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--line)}
+  .console-top .tt{display:flex;align-items:center;gap:11px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .console-top .tt b{color:var(--text);font-weight:700;font-family:var(--body);font-size:14px}
+  .leds{display:flex;gap:6px}
+  .leds i{width:9px;height:9px;border-radius:50%}
+  .leds i:nth-child(1){background:var(--signal)}
+  .leds i:nth-child(2){background:var(--signal-2)}
+  .leds i:nth-child(3){background:var(--mint)}
+
+  /* mode toggle */
+  .mode{padding:20px 22px 4px}
+  .seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:5px;position:relative}
+  .seg button{flex:1;background:none;border:none;color:var(--muted);font-family:var(--body);font-size:14.5px;font-weight:600;
+    padding:12px 10px;border-radius:10px;cursor:pointer;z-index:2;transition:color .25s;display:flex;align-items:center;justify-content:center;gap:9px}
+  .seg button svg{width:17px;height:17px}
+  .seg button.active{color:#1a1208}
+  .seg .glider{position:absolute;top:5px;bottom:5px;left:5px;width:calc(50% - 5px);border-radius:10px;z-index:1;
+    background:linear-gradient(100deg,var(--signal),var(--signal-2));transition:transform .35s cubic-bezier(.4,1.3,.5,1), background .35s}
+  .seg.server .glider{transform:translateX(100%);background:linear-gradient(100deg,#7c8cff,#5ce0b6)}
+  .mode-note{display:flex;align-items:flex-start;gap:10px;padding:13px 4px 4px;font-size:13.5px;color:var(--muted)}
+  .mode-note svg{width:16px;height:16px;flex:none;margin-top:3px}
+  .mode-note .local-only{color:var(--mint)}
+  .mode-note b{color:var(--text);font-weight:600}
+
+  /* dropzone */
+  .drop{margin:18px 22px;border:1.5px dashed var(--line-strong);border-radius:18px;padding:42px 24px;text-align:center;
+    cursor:pointer;transition:.25s;background:rgba(255,255,255,0.012);position:relative}
+  .drop:hover,.drop.drag{border-color:var(--signal);background:var(--amber-dim)}
+  .drop.drag{transform:scale(1.005)}
+  .drop .ring{width:62px;height:62px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;
+    background:radial-gradient(circle at 50% 35%, var(--amber-dim), transparent 70%);border:1px solid var(--line-strong)}
+  .drop .ring svg{width:28px;height:28px;color:var(--signal)}
+  .drop h3{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-0.01em}
+  .drop p{color:var(--muted);font-size:14px;margin-top:6px}
+  .drop .browse{color:var(--signal);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+  .formats{margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.05em}
+
+  /* file list */
+  .files{margin:0 22px;display:flex;flex-direction:column;gap:9px}
+  .file{display:flex;align-items:center;gap:14px;background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:13px 15px;
+    animation:up .4s ease forwards}
+  .file .ico{width:38px;height:38px;border-radius:10px;flex:none;display:grid;place-items:center;background:var(--amber-dim);color:var(--signal)}
+  .file .ico svg{width:18px;height:18px}
+  .file .meta{flex:1;min-width:0}
+  .file .meta .nm{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .file .meta .stats{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:2px}
+  .file .meta .stats .arrow{color:var(--signal-2)}
+  .file .est{font-family:var(--mono);font-size:12px;color:var(--mint);text-align:right;white-space:nowrap}
+  .file .est small{display:block;color:var(--faint);font-size:10px;letter-spacing:.05em}
+  .file .rm{background:none;border:none;color:var(--faint);cursor:pointer;padding:6px;border-radius:8px;transition:.2s;flex:none}
+  .file .rm:hover{color:var(--signal);background:var(--amber-dim)}
+  .file .rm svg{width:16px;height:16px;display:block}
+
+  /* options */
+  .opts{margin:18px 22px 0;border-top:1px solid var(--line);padding-top:18px}
+  .opts-head{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+  .opts-head svg{width:15px;height:15px}
+  .opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px 30px}
+  @media(max-width:640px){.opt-grid{grid-template-columns:1fr}}
+  .opt{}
+  .opt label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text);margin-bottom:9px}
+  .opt label .tag{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--faint);background:var(--surface-2);
+    padding:2px 6px;border-radius:5px;border:1px solid var(--line)}
+  .opt .hint{font-size:11.5px;color:var(--faint);margin-top:7px;line-height:1.4}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:var(--mono);font-size:12.5px;font-weight:500;color:var(--muted);background:var(--bg);
+    border:1px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer;transition:.18s;user-select:none}
+  .chip:hover{border-color:var(--line-strong);color:var(--text)}
+  .chip.on{background:var(--amber-dim);border-color:var(--signal);color:var(--signal-2)}
+  select.opt-sel,input.opt-in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+    color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 13px;appearance:none;cursor:pointer}
+  select.opt-sel{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23a89e8c' stroke-width='2'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
+  .toggle-row{display:flex;flex-direction:column;gap:10px}
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);border:1px solid var(--line);
+    border-radius:10px;padding:11px 14px;cursor:pointer;transition:.18s}
+  .switch:hover{border-color:var(--line-strong)}
+  .switch .lab{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .switch.on{border-color:var(--mint);background:var(--mint-dim)}
+  .switch.on .lab{color:var(--mint)}
+  .knob{width:38px;height:21px;border-radius:100px;background:var(--surface-2);border:1px solid var(--line-strong);position:relative;flex:none;transition:.22s}
+  .knob::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--faint);transition:.22s}
+  .switch.on .knob{background:var(--mint)}
+  .switch.on .knob::after{transform:translateX(17px);background:#0b0a08}
+  .trim-row{display:flex;gap:10px}
+  .trim-row input{flex:1}
+
+  /* presets */
+  .preset-bar{grid-column:1/-1;margin-bottom:4px}
+  .preset-bar > label{margin-bottom:11px}
+  .preset-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .preset{display:inline-flex;align-items:center;gap:7px;font-family:var(--body);font-size:13px;font-weight:600;
+    color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:9px 13px;
+    cursor:pointer;transition:.18s;user-select:none}
+  .preset:hover{border-color:var(--line-strong);color:var(--text)}
+  .preset.on{background:var(--amber-dim);border-color:var(--signal);color:var(--signal-2)}
+  .preset .emoji{font-size:15px;line-height:1}
+  .preset .sub{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--faint);margin-left:2px}
+  .preset.on .sub{color:var(--muted)}
+
+  /* convert footer */
+  .convert-bar{margin:22px;display:flex;align-items:center;gap:16px}
+  .summary{flex:1;font-family:var(--mono);font-size:11.5px;color:var(--faint);line-height:1.5}
+  .summary b{color:var(--muted);font-weight:500}
+  .btn-go{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(100deg,var(--signal),var(--signal-2));
+    color:#1a1208;border:none;font-family:var(--body);font-weight:700;font-size:15.5px;padding:15px 28px;border-radius:13px;cursor:pointer;
+    transition:.2s;box-shadow:0 14px 30px -10px rgba(255,106,43,0.6);white-space:nowrap}
+  .btn-go:hover{transform:translateY(-2px);box-shadow:0 20px 40px -10px rgba(255,106,43,0.7)}
+  .btn-go:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;filter:grayscale(.4)}
+  .btn-go svg{width:18px;height:18px}
+  .prog{height:6px;border-radius:100px;background:var(--bg);overflow:hidden;margin:0 22px 6px;display:none}
+  .prog.show{display:block}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--signal),var(--mint));transition:width .2s}
+
+  /* ---------- locked result card ---------- */
+  .result-card{margin:0 22px;background:linear-gradient(180deg,var(--surface),var(--bg));border:1px solid var(--line);
+    border-radius:15px;padding:16px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;
+    animation:up .45s ease forwards}
+  .result-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--signal),var(--signal-2),transparent)}
+  .rc-top{display:flex;align-items:center;gap:14px}
+  .rc-ico{width:40px;height:40px;border-radius:11px;flex:none;display:grid;place-items:center;
+    background:var(--amber-dim);color:var(--signal-2);border:1px solid var(--line-strong)}
+  .rc-ico svg{width:19px;height:19px}
+  .rc-meta{flex:1;min-width:0}
+  .rc-meta .nm{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:9px}
+  .rc-meta .nm .ready{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--mint);background:var(--mint-dim);
+    border:1px solid var(--line);padding:2px 7px;border-radius:6px;letter-spacing:.04em}
+  .rc-meta .stats{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:3px}
+  .lock-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--faint);
+    border:1px solid var(--line);background:var(--bg-2);padding:5px 10px;border-radius:8px;flex:none}
+  .lock-chip svg{width:12px;height:12px}
+
+  /* preview player */
+  .preview{display:flex;align-items:center;gap:13px;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .play-btn{width:38px;height:38px;flex:none;border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--signal),var(--signal-2));color:#1a1208;transition:.18s;box-shadow:0 6px 16px -6px rgba(255,106,43,0.6)}
+  .play-btn:hover{transform:scale(1.06)}
+  .play-btn svg{width:16px;height:16px;margin-left:1px}
+  .play-btn.playing svg{margin-left:0}
+  .wave{flex:1;display:flex;align-items:center;gap:2px;height:34px;overflow:hidden}
+  .wave span{flex:1;min-width:2px;border-radius:2px;background:var(--line-strong);transition:background .12s,transform .12s}
+  .wave span.played{background:linear-gradient(var(--signal-2),var(--signal))}
+  .wave span.cursor{transform:scaleY(1.18)}
+  .ptime{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;flex:none;min-width:74px;text-align:right}
+  .preview-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);
+    display:flex;align-items:center;gap:7px}
+  .preview-label .bar{flex:1;height:1px;background:var(--line)}
+
+  /* actions */
+  .rc-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-unlock{flex:1;min-width:170px;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    background:linear-gradient(100deg,var(--signal),var(--signal-2));color:#1a1208;border:none;font-family:var(--body);
+    font-weight:700;font-size:14.5px;padding:13px 18px;border-radius:11px;cursor:pointer;transition:.2s;
+    box-shadow:0 12px 26px -12px rgba(255,106,43,0.65)}
+  .btn-unlock:hover{transform:translateY(-2px);box-shadow:0 18px 34px -12px rgba(255,106,43,0.7)}
+  .btn-unlock svg{width:16px;height:16px}
+  .dl-locked{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--bg);color:var(--faint);
+    border:1px solid var(--line);font-family:var(--body);font-weight:600;font-size:14px;padding:13px 18px;border-radius:11px;
+    cursor:pointer;transition:.2s;position:relative}
+  .dl-locked:hover{border-color:var(--line-strong);color:var(--muted)}
+  .dl-locked svg{width:15px;height:15px}
+  /* unlocked state */
+  .result-card.unlocked::before{background:linear-gradient(90deg,var(--mint),transparent)}
+  .dl-unlocked{flex:1;min-width:170px;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    background:var(--mint-dim);color:var(--mint);border:1px solid var(--mint);font-family:var(--body);font-weight:700;
+    font-size:14.5px;padding:13px 18px;border-radius:11px;cursor:pointer;transition:.2s;text-decoration:none}
+  .dl-unlocked:hover{background:rgba(92,224,182,0.22)}
+  .dl-unlocked svg{width:16px;height:16px}
+  .btn-clear{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    background:var(--bg);color:var(--muted);border:1px solid var(--line);font-family:var(--body);
+    font-weight:600;font-size:14px;padding:13px 18px;border-radius:11px;cursor:pointer;transition:.2s;white-space:nowrap}
+  .btn-clear:hover{border-color:var(--line-strong);color:var(--text)}
+  .btn-clear.subtle{font-size:13px;padding:13px 16px;color:var(--faint)}
+  .btn-clear.subtle:hover{color:var(--muted)}
+
+  /* ---------- unlock modal ---------- */
+  .overlay{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;
+    background:rgba(4,3,2,0.84);backdrop-filter:blur(14px);opacity:0;transition:opacity .3s}
+  .overlay.show{display:flex;opacity:1}
+  .modal{width:100%;max-width:520px;background:linear-gradient(180deg,var(--surface-2),var(--bg-2));
+    border:1.5px solid rgba(255,106,43,0.38);border-radius:28px;padding:36px 34px 32px;position:relative;
+    box-shadow:0 0 0 1px rgba(255,106,43,0.1),0 0 90px -18px rgba(255,106,43,0.45),0 60px 120px -40px rgba(0,0,0,0.92),inset 0 1px 0 rgba(255,236,210,0.08);
+    transform:translateY(24px) scale(.96);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  .overlay.show .modal{transform:none}
+  .modal-x{position:absolute;top:20px;right:20px;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);
+    background:var(--bg);color:var(--muted);cursor:pointer;display:grid;place-items:center;transition:.18s}
+  .modal-x:hover{color:var(--text);border-color:var(--line-strong)}
+  .modal-x svg{width:15px;height:15px}
+  .modal-lock{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;margin-bottom:20px;
+    background:radial-gradient(circle at 50% 30%,var(--amber-dim),transparent 70%);border:1px solid var(--line-strong);
+    box-shadow:0 0 32px -8px rgba(255,106,43,0.5)}
+  .modal-lock svg{width:28px;height:28px;color:var(--signal)}
+  .modal h3{font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,34px);letter-spacing:-0.03em;line-height:1.05;
+    background:linear-gradient(105deg,var(--signal),var(--signal-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .modal .msub{color:var(--muted);font-size:15px;margin-top:10px;line-height:1.55}
+  .modal .msub b{color:var(--text);font-weight:600}
+  .get-box{margin:22px 0;border:1px solid var(--line);border-radius:14px;background:var(--bg);overflow:hidden}
+  .get-box .gi{display:flex;align-items:center;gap:11px;padding:11px 15px;font-size:13.5px;color:var(--text)}
+  .get-box .gi:not(:last-child){border-bottom:1px solid var(--line)}
+  .get-box .gi svg{width:16px;height:16px;color:var(--mint);flex:none}
+  .get-box .gi .spec{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .price-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+  .price-row .lab{font-family:var(--mono);font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+  .price-row .amt{font-family:var(--display);font-weight:800;font-size:38px;letter-spacing:-0.03em;line-height:1}
+  .price-row .amt small{font-size:15px;color:var(--muted);font-weight:600;margin-left:4px}
+
+  /* ----- subscription plan selector ----- */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:22px 0 18px}
+  .plan{position:relative;text-align:left;background:var(--bg);border:1.5px solid var(--line);border-radius:15px;
+    padding:16px 16px 15px;cursor:pointer;transition:.2s;font-family:var(--body);color:var(--text);overflow:visible}
+  .plan:hover{border-color:var(--line-strong)}
+  .plan.selected{border-color:var(--signal);background:var(--amber-dim);box-shadow:0 0 0 3px rgba(255,106,43,0.12)}
+  .plan .pname{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted)}
+  .plan.selected .pname{color:var(--signal-2)}
+  .plan .tick{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line-strong);display:grid;place-items:center;flex:none;transition:.2s}
+  .plan .tick svg{width:10px;height:10px;color:#1a1208;opacity:0;transition:.2s}
+  .plan.selected .tick{background:var(--signal);border-color:var(--signal)}
+  .plan.selected .tick svg{opacity:1}
+  .plan .pprice{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:-0.03em;line-height:1;margin-top:12px}
+  .plan .pprice span{font-size:14px;color:var(--muted);font-weight:600;letter-spacing:0}
+  .plan .pnote{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:6px;letter-spacing:.02em}
+  .plan .strike{text-decoration:line-through;color:var(--faint);margin-right:5px}
+  .save{position:absolute;top:-9px;right:11px;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.06em;
+    color:#06120d;background:linear-gradient(100deg,var(--mint),var(--signal-2));padding:3px 8px;border-radius:7px;box-shadow:0 4px 12px -4px rgba(92,224,182,0.5)}
+  .billed{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center;margin:-6px 0 16px}
+  .billed b{color:var(--muted);font-weight:500}
+  .btn-pay{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(100deg,var(--signal),var(--signal-2));color:#1a1208;border:none;font-family:var(--body);
+    font-weight:700;font-size:16px;padding:16px;border-radius:13px;cursor:pointer;transition:.2s;
+    box-shadow:0 16px 34px -12px rgba(255,106,43,0.65)}
+  .btn-pay:hover{transform:translateY(-2px);box-shadow:0 22px 44px -12px rgba(255,106,43,0.72)}
+  .btn-pay svg{width:18px;height:18px}
+  .modal .later{display:block;width:100%;text-align:center;background:none;border:none;color:var(--faint);
+    font-family:var(--body);font-size:13.5px;margin-top:14px;cursor:pointer;transition:.18s}
+  .modal .later:hover{color:var(--muted)}
+  .modal-format{border-color:rgba(92,224,182,0.38);box-shadow:0 0 0 1px rgba(92,224,182,0.1),0 0 90px -18px rgba(92,224,182,0.25),0 60px 120px -40px rgba(0,0,0,0.92),inset 0 1px 0 rgba(255,236,210,0.08)}
+  .modal-format h3{background:linear-gradient(105deg,var(--mint),var(--signal-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .modal-format .modal-lock{box-shadow:0 0 32px -8px rgba(92,224,182,0.45)}
+  .modal-format .modal-lock svg{color:var(--mint)}
+  .modal-format .modal-supported{margin-top:14px;margin-bottom:22px}
+  .modal-format #formatModalGo{margin-top:22px}
+  .modal-format #formatModalGo[hidden] + .later{margin-top:22px}
+  #formatModalGo[hidden]{display:none !important}
+  .stripe-foot{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:20px;padding-top:18px;
+    border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center}
+  .stripe-foot .secure{display:flex;align-items:center;gap:8px;color:var(--faint)}
+  .stripe-foot .secure svg{width:13px;height:13px}
+  .stripe-foot .cancel-note{color:var(--mint);font-weight:600;font-size:12.5px;letter-spacing:.01em}
+  .cards{display:flex;gap:5px}
+  .cards i{width:26px;height:17px;border-radius:3px;background:var(--surface);border:1px solid var(--line-strong);display:block;position:relative}
+  .cards i::after{content:"";position:absolute;top:5px;left:4px;right:4px;height:3px;border-radius:1px;background:var(--faint);opacity:.5}
+
+  /* redirecting state */
+  .redirecting{position:absolute;inset:0;background:linear-gradient(180deg,var(--surface-2),var(--bg-2));border-radius:24px;
+    display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:30px}
+  .redirecting.show{display:flex}
+  .spinner{width:42px;height:42px;border-radius:50%;border:3px solid var(--line-strong);border-top-color:var(--signal);
+    animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .redirecting p{font-family:var(--display);font-weight:600;font-size:18px}
+  .redirecting span{font-family:var(--mono);font-size:12px;color:var(--faint)}
+
+  /* trust strip */
+  .trust{display:flex;align-items:center;justify-content:center;gap:34px;flex-wrap:wrap;margin:34px auto 0;
+    font-family:var(--mono);font-size:12px;color:var(--faint)}
+  .trust span{display:flex;align-items:center;gap:8px}
+  .trust svg{width:15px;height:15px;color:var(--mint)}
+
+  /* ---------- section shell ---------- */
+  section.block{padding:96px 0;position:relative}
+  .sec-head{max-width:680px}
+  .sec-head .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--signal);font-weight:500}
+  .sec-head h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.6vw,48px);letter-spacing:-0.03em;line-height:1.04;margin:16px 0 0}
+  .sec-head p{color:var(--muted);font-size:17px;margin-top:16px;line-height:1.55}
+  .center{margin-left:auto;margin-right:auto;text-align:center}
+
+  /* features */
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px}
+  @media(max-width:880px){.feat-grid{grid-template-columns:1fr}}
+  .feat{border:1px solid var(--line);border-radius:var(--r);padding:28px;background:linear-gradient(180deg,var(--surface),var(--bg-2));
+    transition:.3s;position:relative;overflow:hidden}
+  .feat:hover{border-color:var(--line-strong);transform:translateY(-4px)}
+  .feat .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;margin-bottom:18px;
+    background:var(--amber-dim);border:1px solid var(--line-strong)}
+  .feat .ic svg{width:22px;height:22px;color:var(--signal-2)}
+  .feat.mint .ic{background:var(--mint-dim)}.feat.mint .ic svg{color:var(--mint)}
+  .feat h3{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-0.01em}
+  .feat p{color:var(--muted);font-size:14.5px;margin-top:9px;line-height:1.55}
+
+  /* use cases */
+  .uc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+  @media(max-width:880px){.uc-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.uc-grid{grid-template-columns:1fr}}
+  .uc{border:1px solid var(--line);border-radius:15px;padding:22px;background:var(--bg-2);transition:.25s;cursor:pointer}
+  .uc:hover{border-color:var(--signal);background:var(--surface)}
+  .uc .top{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+  .uc .emoji{font-size:22px}
+  .uc h4{font-family:var(--display);font-weight:700;font-size:17px}
+  .uc p{color:var(--muted);font-size:13.5px;line-height:1.5}
+  .uc .preset{margin-top:13px;font-family:var(--mono);font-size:11px;color:var(--signal-2);background:var(--amber-dim);
+    display:inline-block;padding:4px 9px;border-radius:7px;border:1px solid var(--line)}
+
+  /* testimonials */
+  .tst-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px}
+  @media(max-width:880px){.tst-grid{grid-template-columns:1fr}}
+  .tst{border:1px solid var(--line);border-radius:var(--r);padding:28px;background:linear-gradient(180deg,var(--surface),var(--bg-2));
+    display:flex;flex-direction:column;gap:18px;position:relative}
+  .tst .quote-mark{font-family:var(--display);font-size:60px;line-height:.5;color:var(--signal);opacity:.5;height:24px}
+  .tst p{font-size:15.5px;line-height:1.6;color:var(--text);flex:1}
+  .tst .who{display:flex;align-items:center;gap:13px}
+  .tst .av{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:var(--display);
+    font-weight:700;font-size:17px;color:#1a1208;background:linear-gradient(135deg,var(--signal),var(--signal-2))}
+  .tst .av.m2{background:linear-gradient(135deg,#7c8cff,var(--mint))}
+  .tst .av.m3{background:linear-gradient(135deg,var(--mint),var(--signal-2))}
+  .tst .who .nm{font-weight:700;font-size:14.5px}
+  .tst .who .rl{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  .stars{display:flex;gap:2px;color:var(--signal-2)}
+  .stars svg{width:14px;height:14px}
+  .tst-more{text-align:center;margin-top:32px}
+  .tst-more a{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px;font-weight:500;
+    color:var(--signal-2);text-decoration:none;padding:10px 18px;border-radius:100px;border:1px solid var(--line-strong);
+    background:rgba(255,255,255,0.02);transition:.2s}
+  .tst-more a:hover{color:var(--text);border-color:var(--signal);background:var(--amber-dim)}
+  .tst-more a svg{width:14px;height:14px}
+
+  /* faq */
+  .faq{max-width:780px;margin:48px auto 0}
+  .q{border:1px solid var(--line);border-radius:14px;margin-bottom:12px;background:var(--bg-2);overflow:hidden}
+  .q summary{list-style:none;cursor:pointer;padding:20px 22px;display:flex;align-items:center;justify-content:space-between;
+    font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:-0.01em}
+  .q summary::-webkit-details-marker{display:none}
+  .q summary .plus{color:var(--signal);font-size:22px;transition:.25s;flex:none;margin-left:18px}
+  .q[open] summary .plus{transform:rotate(45deg)}
+  .q .a{padding:0 22px 22px;color:var(--muted);font-size:15px;line-height:1.6}
+  .q .a code{font-family:var(--mono);font-size:13px;color:var(--signal-2);background:var(--surface-2);padding:2px 6px;border-radius:5px}
+
+  /* format links */
+  .format-links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:40px;max-width:760px;margin-left:auto;margin-right:auto}
+  .format-links a{display:inline-flex;padding:10px 16px;border-radius:10px;border:1px solid var(--line);color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:.2s;background:var(--bg-2)}
+  .format-links a:hover,.format-links a.current{border-color:var(--signal);color:var(--text);background:var(--surface)}
+  .format-links a.current{color:var(--signal-2)}
+
+  /* cta */
+  .cta{margin:0 auto;max-width:var(--maxw);padding:0 28px}
+  .cta-in{border:1px solid var(--line-strong);border-radius:28px;padding:64px 40px;text-align:center;position:relative;overflow:hidden;
+    background:linear-gradient(140deg,var(--surface-2),var(--bg-2));}
+  .cta-in::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 50% -20%,var(--amber-dim),transparent 70%)}
+  .cta-in h2{position:relative;font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,52px);letter-spacing:-0.03em;line-height:1.02}
+  .cta-in p{position:relative;color:var(--muted);font-size:18px;margin:18px auto 30px;max-width:480px}
+  .cta-in .btn-go{position:relative}
+
+  /* footer */
+  footer{border-top:1px solid var(--line);margin-top:96px;padding:54px 0 40px}
+  .foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:34px}
+  @media(max-width:760px){.foot-grid{grid-template-columns:1fr 1fr}}
+  .foot-grid p{color:var(--muted);font-size:13.5px;margin-top:14px;max-width:280px;line-height:1.5}
+  .foot-col h5{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+  .foot-col a{display:block;color:var(--muted);text-decoration:none;font-size:14px;margin-bottom:11px;transition:.2s}
+  .foot-col a:hover{color:var(--signal)}
+  .foot-bot{display:flex;align-items:center;justify-content:space-between;margin-top:46px;padding-top:26px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:12px;color:var(--faint);flex-wrap:wrap;gap:12px}
+</style>
+<script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="rn sn init kn Qr wn Cn yn capture calculateEventProperties Rn register register_once register_for_session unregister unregister_for_session An getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync Fn identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty On En createPersonProfile setInternalOrTestUser Ln gn $n opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing In debug Kr Pn getPageViewId captureTraceFeedback captureTraceMetric vn".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_vsQzP6xQyqaMAYcn7FbZEKFEyUQzkrN4ioRZB3Jj5g4z', {
+        api_host: 'https://eu.i.posthog.com',
+        defaults: '2026-05-30',
+        person_profiles: 'identified_only',
+    })
+</script>
+
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap nav-in">
+    <a href="/" class="brand">
+      <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
+      YouConvert<span class="io">.com</span>
+    </a>
+    <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links" id="navMenu">
+      <a href="/">Home</a>
+      <a href="#how">How it works</a>
+      <a href="#options">Options</a>
+      <a href="#uses">Use cases</a>
+      <a href="#faq">FAQ</a>
+      <a href="/my-files.html" id="navFiles" hidden>My files</a>
+      <a href="/login.html" id="navAccount">Log in</a>
+      <a href="#converter" class="pill pill-desktop"><span class="dot"></span>Private by default</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero wrap">
+  <span class="eyebrow reveal d1">⎯⎯ OGG → M4R ⎯⎯</span>
+  <h1 class="reveal d2">Convert OGG to M4R<br><span class="grad">ringtones, ready to sync.</span></h1>
+  <p class="sub reveal d3">Drop a file and it's converted <b>right in your browser</b> — nothing leaves your device. Need to crunch huge batches? Flip one switch and let <b>our servers</b> do the heavy lifting.</p>
+
+  <!-- CONVERTER CONSOLE -->
+  <div class="converter reveal d4" id="converter">
+    <div class="console">
+      <div class="console-top">
+        <div class="tt"><b>Converter</b></div>
+        <div class="leds"><i></i><i></i><i></i></div>
+      </div>
+
+      <!-- mode -->
+      <div class="mode">
+        <div class="seg" id="seg">
+          <span class="glider"></span>
+          <button class="active" data-mode="local" onclick="setMode('local')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+            On my device
+          </button>
+          <button data-mode="server" onclick="setMode('server')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+            On our servers
+          </button>
+        </div>
+        <div class="mode-note" id="modeNote">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="local-only"><path d="M12 2l8 4v6c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-4z"/></svg>
+          <span class="local-only" id="modeText"><b>100% local.</b> No upload, no server, no limits on what you can convert.</span>
+        </div>
+      </div>
+
+      <!-- dropzone -->
+      <div class="drop" id="drop">
+        <input type="file" id="fileInput" accept=".ogg,audio/ogg,application/ogg,audio/vorbis" multiple hidden>
+        <div class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></div>
+        <h3>Drop your OGG files here</h3>
+        <p>or <span class="browse">browse to upload</span> — drag a whole folder if you like</p>
+        <div class="formats">.OGG · UP TO 2GB EACH · BATCH SUPPORTED</div>
+      </div>
+
+      <!-- file list -->
+      <div class="files" id="files"></div>
+
+      <!-- options -->
+      <div class="opts" id="options">
+        <div class="opts-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.2 4.2l2.8 2.8m10 10l2.8 2.8M1 12h4m14 0h4M4.2 19.8l2.8-2.8m10-10l2.8-2.8"/></svg>Encoding options</div>
+
+        <div class="opt-grid">
+          <!-- presets -->
+          <div class="opt preset-bar">
+            <label>Presets <span class="tag">quick pick</span></label>
+            <div class="preset-chips" id="presets">
+              <span class="preset on" data-preset="music"><span class="emoji">🎧</span>Music<span class="sub">320k · stereo</span></span>
+              <span class="preset" data-preset="podcast"><span class="emoji">🎙️</span>Podcast<span class="sub">96k · mono</span></span>
+              <span class="preset" data-preset="audiobook"><span class="emoji">📚</span>Audiobook<span class="sub">64k · 22kHz</span></span>
+              <span class="preset" data-preset="ringtone"><span class="emoji">📱</span>Clip<span class="sub">192k · fade</span></span>
+              <span class="preset" data-preset="web"><span class="emoji">🌐</span>Web<span class="sub">128k · VBR</span></span>
+              <span class="preset" data-preset="archive"><span class="emoji">🗄️</span>Archive<span class="sub">256k · V0</span></span>
+            </div>
+            <div class="hint">Pick a starting point — every setting below updates to match. Tweak anything by hand anytime.</div>
+          </div>
+
+          <!-- bitrate -->
+          <div class="opt">
+            <label>Bitrate <span class="tag">-b:a</span></label>
+            <div class="chips" id="bitrate">
+              <span class="chip">64k</span>
+              <span class="chip">96k</span>
+              <span class="chip">128k</span>
+              <span class="chip">192k</span>
+              <span class="chip on">256k</span>
+              <span class="chip">320k</span>
+            </div>
+            <div class="hint">320k = transparent quality. 128k = smallest file for voice & sharing.</div>
+          </div>
+
+          <!-- encoding mode -->
+          <div class="opt">
+            <label>Encoding mode <span class="tag">CBR / VBR</span></label>
+            <div class="chips" id="mode2">
+              <span class="chip on">CBR</span>
+              <span class="chip">VBR (V0)</span>
+              <span class="chip">VBR (V2)</span>
+              <span class="chip">ABR</span>
+            </div>
+            <div class="hint">VBR V0 ≈ 320k quality at a smaller size. CBR is best for streaming.</div>
+          </div>
+
+          <!-- sample rate -->
+          <div class="opt">
+            <label>Sample rate <span class="tag">-ar</span></label>
+            <select class="opt-sel" id="samplerate">
+              <option value="keep">Keep original</option>
+              <option value="44100" selected>44.1 kHz — CD standard</option>
+              <option value="48000">48 kHz — video / DAW</option>
+              <option value="32000">32 kHz</option>
+              <option value="22050">22.05 kHz — voice</option>
+            </select>
+            <div class="hint">Match your source unless you have a reason to resample.</div>
+          </div>
+
+          <!-- channels -->
+          <div class="opt">
+            <label>Channels <span class="tag">-ac</span></label>
+            <div class="chips" id="channels">
+              <span class="chip on">Stereo</span>
+              <span class="chip">Mono</span>
+              <span class="chip">Joint stereo</span>
+            </div>
+            <div class="hint">Mono roughly halves the file — ideal for podcasts & audiobooks.</div>
+          </div>
+
+          <!-- processing toggles -->
+          <div class="opt">
+            <label>Processing <span class="tag">-af</span></label>
+            <div class="toggle-row">
+              <div class="switch" id="normalizeSwitch" onclick="this.classList.toggle('on')">
+                <span class="lab">Normalize loudness (EBU R128)</span><span class="knob"></span>
+              </div>
+              <div class="switch" id="trimSwitch" onclick="toggleTrim(this)">
+                <span class="lab">Trim start / end</span><span class="knob"></span>
+              </div>
+              <div class="trim-row" id="trimRow" style="display:none">
+                <input class="opt-in" id="trimStart" placeholder="start 0:00">
+                <input class="opt-in" id="trimEnd" placeholder="end 0:00">
+              </div>
+              <div class="switch" id="fadeSwitch" onclick="this.classList.toggle('on')">
+                <span class="lab">Fade in / out</span><span class="knob"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- metadata -->
+          <div class="opt">
+            <label>ID3 tags <span class="tag">-metadata</span></label>
+            <div class="toggle-row">
+              <input class="opt-in" id="metaTitle" placeholder="Title">
+              <input class="opt-in" id="metaArtist" placeholder="Artist">
+              <div class="switch" id="coverArtSwitch" onclick="this.classList.toggle('on')">
+                <span class="lab">Keep / embed cover art</span><span class="knob"></span>
+              </div>
+            </div>
+            <div class="hint">Carry over tags & artwork, or set them fresh on the way out.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- progress -->
+      <div class="prog" id="prog"><i id="progBar"></i></div>
+
+      <!-- convert -->
+      <div class="convert-bar">
+        <div class="summary" id="summary"><b>No files yet</b> — drop OGG files above to get started.</div>
+        <button class="btn-go" id="goBtn" disabled onclick="convert()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Convert
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- trust strip -->
+  <div class="trust reveal d5">
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>No watermarks</span>
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Batch conversion</span>
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Files deleted instantly</span>
+  </div>
+</header>
+
+<!-- HOW IT WORKS -->
+<section class="block wrap" id="how">
+  <div class="sec-head">
+    <div class="kicker">Two ways to convert</div>
+    <h2>Your files, your call.</h2>
+    <p>Most people never need to upload anything. But when you've got hundreds of files or a 4-hour live recording, server mode is one click away.</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat mint">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <h3>Local mode</h3>
+      <p>The audio is decoded and re-encoded on your own machine — nothing is ever sent over the wire. Perfect for sensitive recordings, demos and client work.</p>
+    </div>
+    <div class="feat">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></div>
+      <h3>Server mode</h3>
+      <p>Off-load big jobs to dedicated workers. Convert massive batches and multi-gigabyte sessions without tying up your laptop. Files auto-delete the moment your download finishes.</p>
+    </div>
+    <div class="feat">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.2 4.2l2.8 2.8m10 10l2.8 2.8M1 12h4m14 0h4"/></svg></div>
+      <h3>Full control</h3>
+      <p>The same flags engineers reach for on the command line — bitrate, VBR quality, sample rate, channels, loudness normalization, trimming and ID3 tags — exposed as buttons you can actually understand.</p>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="block wrap" id="uses">
+  <div class="sec-head">
+    <div class="kicker">Tuned for the job</div>
+    <h2>Presets for what you're really doing.</h2>
+    <p>Pick a use case and the right options snap into place — or tweak everything by hand.</p>
+  </div>
+  <div class="uc-grid">
+    <div class="uc" data-preset="music">
+      <div class="top"><span class="emoji">🎧</span><h4>Music & releases</h4></div>
+      <p>Ship streaming-ready masters from your DAW without losing detail.</p>
+      <span class="preset">320k · CBR · 44.1kHz · stereo</span>
+    </div>
+    <div class="uc" data-preset="podcast">
+      <div class="top"><span class="emoji">🎙️</span><h4>Podcasts</h4></div>
+      <p>Smaller episodes that still sound clean, with broadcast loudness baked in.</p>
+      <span class="preset">96k · mono · R128 loudnorm</span>
+    </div>
+    <div class="uc" data-preset="audiobook">
+      <div class="top"><span class="emoji">📚</span><h4>Audiobooks</h4></div>
+      <p>Tiny files for long-form spoken word that fit anywhere.</p>
+      <span class="preset">64k · mono · 22kHz</span>
+    </div>
+    <div class="uc" data-preset="ringtone">
+      <div class="top"><span class="emoji">📱</span><h4>Ringtones & clips</h4></div>
+      <p>Trim to the hook and fade the edges for a clean loop.</p>
+      <span class="preset">192k · trim · fade in/out</span>
+    </div>
+    <div class="uc" data-preset="web">
+      <div class="top"><span class="emoji">🌐</span><h4>Web & email</h4></div>
+      <p>Shrink fat WAVs so they actually attach and load fast.</p>
+      <span class="preset">128k · VBR V2</span>
+    </div>
+    <div class="uc" data-preset="archive">
+      <div class="top"><span class="emoji">🗄️</span><h4>Archiving</h4></div>
+      <p>Reclaim drive space on session backups you rarely reopen.</p>
+      <span class="preset">256k · VBR V0 · keep tags</span>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="block wrap">
+  <div class="sec-head center">
+    <div class="kicker">Loved by creators</div>
+    <h2>People who stopped uploading.</h2>
+  </div>
+  <div class="tst-grid">
+    <div class="tst">
+      <div class="quote-mark">"</div>
+      <p>I hand off rough mixes to clients all day. Knowing the WAVs never leave my laptop in local mode is the whole reason I switched. The 320k exports are instant.</p>
+      <div class="who">
+        <div class="av">MR</div>
+        <div><div class="nm">Mara Reyes</div><div class="rl">Mixing engineer, Lisbon</div></div>
+      </div>
+      <div class="stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg></div>
+    </div>
+    <div class="tst">
+      <div class="quote-mark">"</div>
+      <p>I batch-convert a season of interviews at once. Server mode chewed through 240 files with R128 loudness while I made coffee. The podcast preset alone saves me an hour an episode.</p>
+      <div class="who">
+        <div class="av m2">TO</div>
+        <div><div class="nm">Theo Okafor</div><div class="rl">Podcast producer</div></div>
+      </div>
+      <div class="stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg></div>
+    </div>
+    <div class="tst">
+      <div class="quote-mark">"</div>
+      <p>Finally a converter that doesn't hide the settings or slap a watermark on everything. VBR V0, keep my tags, drag, done. It just respects that I know what I want.</p>
+      <div class="who">
+        <div class="av m3">JL</div>
+        <div><div class="nm">Jin Lee</div><div class="rl">Indie game audio</div></div>
+      </div>
+      <div class="stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg></div>
+    </div>
+  </div>
+  <div class="tst-more">
+    <a href="/testimonials.html">Read all testimonials
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m0 0l-6-6m6 6l-6 6"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- OTHER FORMATS -->
+<section class="block wrap" id="formats">
+  <div class="sec-head center">
+    <div class="kicker">More converters</div>
+    <h2>Other OGG conversions</h2>
+    <p>Need a different output format? Pick one below — same converter, same privacy options.</p>
+  </div>
+  <div class="format-links">
+        <a href="/ogg-to-aac.html">OGG to AAC</a>
+        <a href="/ogg-to-flac.html">OGG to FLAC</a>
+        <a href="/ogg-to-m4r.html" class="current">OGG to M4R</a>
+        <a href="/ogg-to-mp3.html">OGG to MP3</a>
+        <a href="/ogg-to-m4a.html">OGG to M4A</a>
+        <a href="/ogg-to-mp4.html">OGG to MP4</a>
+        <a href="/ogg-to-wav.html">OGG to WAV</a>
+        <a href="/ogg-to-wma.html">OGG to WMA</a>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="block wrap" id="faq">
+  <div class="sec-head center">
+    <div class="kicker">Good to know</div>
+    <h2>Questions, answered.</h2>
+  </div>
+  <div class="faq">
+    <details class="q" open><summary>Is my audio really private in local mode?<span class="plus">+</span></summary><div class="a">Yes. In local mode the conversion happens entirely inside your browser. Your files are read from disk into memory, encoded, and handed straight back to you as a download — they never touch a network connection or a server.</div></details>
+    <details class="q"><summary>What bitrate should I pick?<span class="plus">+</span></summary><div class="a">Ringtones are short — <code>192k–256k</code> is plenty. Use trim and fade for a polished loop.</div></details>
+    <details class="q"><summary>When should I use server mode instead?<span class="plus">+</span></summary><div class="a">Server mode shines for large batches (dozens or hundreds of files), very long recordings, or low-powered devices like phones and tablets. The encoding runs on dedicated workers, and your uploads are deleted automatically once you've downloaded the results.</div></details>
+    <details class="q"><summary>Can I convert more than one file at a time?<span class="plus">+</span></summary><div class="a">Absolutely — drag in as many OGG files as you like, or drop a whole folder. Your chosen options apply to the entire batch, and you can download everything as a single zip.</div></details>
+    <details class="q"><summary>Does it keep my metadata and cover art?<span class="plus">+</span></summary><div class="a">By default we carry over existing ID3 tags and embedded artwork. You can also overwrite the title and artist, or attach new cover art, on the way out.</div></details>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta">
+  <div class="cta-in">
+    <h2>Drop a file. Done in seconds.</h2>
+    <p>No account, no upload by default, no nonsense. M4R ringtones from OGG sources.</p>
+    <a href="#converter" class="btn-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Start converting</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="brand"><span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>YouConvert<span class="io">.com</span></div>
+        <p>Convert OGG to M4R for iPhone — trim to the hook, fade the edges, and sync via Finder or iTunes.</p>
+      </div>
+      <div class="foot-col"><h5>Product</h5><a href="#converter">Converter</a><a href="#formats">OGG conversions</a><a href="/">All converters</a><a href="/testimonials.html">Testimonials</a><a href="#how">Local vs server</a></div>
+      <div class="foot-col"><h5>Company</h5><a href="#faq">FAQ</a><a href="/my-files.html">My files</a><a href="/account.html">Account</a><a href="/login.html">Log in</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></div>
+    </div>
+    <div class="foot-bot">
+      <span>© 2026 YouConvert.com</span>
+    </div>
+  </div>
+</footer>
+
+<!-- FORMAT REDIRECT MODAL -->
+<div class="overlay" id="formatOverlay" onclick="if(event.target===this)closeFormatModal()">
+  <div class="modal modal-format" role="dialog" aria-modal="true" aria-labelledby="formatModalTitle">
+    <button class="modal-x" onclick="closeFormatModal()" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <div class="modal-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+    <h3 id="formatModalTitle">Different format detected</h3>
+    <p class="msub" id="formatModalSub"></p>
+    <button class="btn-pay" id="formatModalGo" type="button" onclick="goToFormatRedirect()">Go to converter</button>
+    <button class="later" type="button" onclick="closeFormatModal()">Stay on this page</button>
+  </div>
+</div>
+
+<!-- UNLOCK MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-x" onclick="closeModal()" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+
+    <div class="modal-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+
+    <h3 id="modalTitle">Unlock unlimited conversions</h3>
+    <p class="msub" id="modalSub">You've heard the <b>30-second preview</b>. Go Pro to convert without limits — full-length files, every option, local or server.</p>
+
+    <div class="plans" id="plans">
+      <button class="plan selected" data-plan="monthly" onclick="selectPlan('monthly')">
+        <div class="pname"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span> Monthly</div>
+        <div class="pprice">$12<span>/mo</span></div>
+        <div class="pnote">Billed monthly</div>
+      </button>
+      <button class="plan" data-plan="annual" onclick="selectPlan('annual')">
+        <span class="save">SAVE 50%</span>
+        <div class="pname"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span> Annual</div>
+        <div class="pprice">$6<span>/mo</span></div>
+        <div class="pnote"><span class="strike">$12</span>$72 billed yearly</div>
+      </button>
+    </div>
+
+    <div class="get-box" id="getBox">
+      <!-- filled by JS -->
+    </div>
+
+    <button class="btn-pay" onclick="goToStripeCheckout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <span id="payLabel">Subscribe — $12/month</span>
+    </button>
+    <button class="later" onclick="closeModal()">Maybe later — keep the preview</button>
+
+    <div class="stripe-foot">
+      <span class="cancel-note">Cancel whenever you want — you're never locked in</span>
+      <span class="secure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+        Secure checkout · Powered by Stripe
+        <span class="cards"><i></i><i></i><i></i></span>
+      </span>
+    </div>
+
+    <!-- redirecting overlay -->
+    <div class="redirecting" id="redirecting">
+      <div class="spinner"></div>
+      <p>Taking you to secure checkout…</p>
+      <span>Hosted by Stripe · do not close this window</span>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/public/nav.js"></script>
+<script type="module" src="/public/converter.js"></script>
+</body>
+</html>

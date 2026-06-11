@@ -1,11 +1,12 @@
 {
-  "name": "wavtomp3",
+  "name": "youconvert",
   "version": "1.0.0",
   "description": "WAV to MP3 converter — local WASM FFmpeg + Zamzar server + Stripe unlock",
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch --watch-path=./server.js --watch-path=./lib --watch-path=./public server.js",
+    "generate-pages": "node scripts/generate-wav-pages.js"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.12.6",
