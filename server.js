@@ -61,6 +61,9 @@ import {
   deleteUserAccount,
 } from './lib/admin.js';
 import { initStore, getHealthInfo } from './lib/store.js';
+import { convertPdfToEpub } from './lib/ebook-convert.js';
+import { cleanUrlMiddleware } from './lib/clean-urls.js';
+import { pagePath } from './lib/page-paths.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3002;
@@ -92,6 +95,11 @@ const upload = multer({
 const libraryUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 500 * 1024 * 1024 },
+});
+
+const ebookUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 },
 });
 
 const app = express();
@@ -154,6 +162,7 @@ app.use('/vendor/@ffmpeg/ffmpeg', express.static(path.join(__dirname, 'node_modu
 app.use('/vendor/@ffmpeg/core', express.static(path.join(__dirname, 'node_modules/@ffmpeg/core')));
 app.use('/vendor/@ffmpeg/util', express.static(path.join(__dirname, 'node_modules/@ffmpeg/util')));
 
+app.use(cleanUrlMiddleware(__dirname));
 app.use(express.static(__dirname));
 
 /* ---------- Auth ---------- */
@@ -592,6 +601,39 @@ app.delete('/api/files/:id', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+/* ---------- Ebook (Calibre) ---------- */
+app.post('/api/convert/ebook', ebookUpload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  const name = (req.file.originalname || '').toLowerCase();
+  if (!name.endsWith('.pdf')) {
+    return res.status(400).json({ error: 'Only PDF files are supported' });
+  }
+
+  let options = {};
+  if (req.body.options) {
+    try {
+      options = JSON.parse(req.body.options);
+    } catch {
+      return res.status(400).json({ error: 'Invalid conversion options' });
+    }
+  }
+
+  try {
+    const epubBuffer = await convertPdfToEpub(req.file.buffer, req.file.originalname, options);
+    const baseName = path.basename(req.file.originalname, path.extname(req.file.originalname));
+    const safeName = (baseName || 'document').replace(/[^\w.\-()+ ]/g, '_');
+    res.setHeader('Content-Type', 'application/epub+zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.epub"`);
+    res.send(epubBuffer);
+  } catch (err) {
+    console.error('Ebook conversion error:', err);
+    res.status(500).json({ error: err.message || 'Conversion failed' });
+  }
+});
+
 /* ---------- Zamzar ---------- */
 app.post('/api/convert/server', upload.single('file'), async (req, res) => {
   if (!ZAMZAR_API_KEY) {
@@ -721,7 +763,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${siteUrl}/create-account.html?session_id={CHECKOUT_SESSION_ID}&return_to=${returnQuery}`,
+      success_url: `${siteUrl}${pagePath('create-account')}?session_id={CHECKOUT_SESSION_ID}&return_to=${returnQuery}`,
       cancel_url: `${siteUrl}${returnPath}${returnPath.includes('?') ? '&' : '?'}checkout=cancelled`,
       allow_promotion_codes: true,
     });

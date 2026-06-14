@@ -42,7 +42,7 @@ function subBadge(sub) {
 async function ensureAdmin() {
   const me = await fetch('/api/auth/me', { credentials: 'include' }).then((r) => r.json());
   if (!me.user) {
-    window.location.replace('/login.html?next=' + encodeURIComponent(panelPath));
+    window.location.replace('/login/?next=' + encodeURIComponent(panelPath));
     return false;
   }
 

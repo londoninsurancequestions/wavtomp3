@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
+<title>PDF to EPUB — YouConvert</title>
+<meta name="description" content="Convert PDF to reflowable EPUB for Kindle, Kobo, and Apple Books. Tune typography, chapters, and device profiles — powered by Calibre.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a08;--bg-2:#100e0b;--surface:#15120d;--surface-2:#1d1812;
+    --line:rgba(255,236,210,0.09);--line-strong:rgba(255,236,210,0.16);
+    --text:#f6efe2;--muted:#a89e8c;--faint:#6f675a;
+    --signal:#ff6a2b;--signal-2:#ffb13b;--mint:#5ce0b6;--mint-dim:rgba(92,224,182,0.14);
+    --amber-dim:rgba(255,106,43,0.13);
+    --display:"Bricolage Grotesque",serif;--body:"Hanken Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+    --r:18px;--maxw:1080px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;position:relative}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(900px 500px at 82% -8%,rgba(255,106,43,0.14),transparent 60%),
+      radial-gradient(700px 600px at 6% 14%,rgba(92,224,182,0.06),transparent 55%)}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+  a{color:var(--signal-2);text-decoration:none}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:linear-gradient(to bottom,rgba(11,10,8,0.92),rgba(11,10,8,0.6));border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:19px;color:var(--text)}
+  .brand:hover{text-decoration:none}
+  .brand .io{color:var(--signal)}
+  .logo-mark{display:flex;align-items:flex-end;gap:2.5px;height:22px}
+  .logo-mark i{width:3px;border-radius:2px;background:var(--signal);display:block}
+  .logo-mark i:nth-child(1){height:8px}.logo-mark i:nth-child(2){height:18px;background:var(--signal-2)}
+  .logo-mark i:nth-child(3){height:12px}.logo-mark i:nth-child(4){height:22px;background:var(--signal-2)}.logo-mark i:nth-child(5){height:9px}
+  .nav-note{font-family:var(--mono);font-size:12px;color:var(--faint)}
+
+  .hero{padding:68px 0 28px;text-align:center}
+  .eyebrow{display:inline-flex;font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--signal-2);
+    border:1px solid var(--line-strong);padding:7px 15px;border-radius:100px;background:rgba(255,255,255,0.02)}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(36px,6vw,62px);line-height:1.02;letter-spacing:-0.035em;margin:22px 0 0}
+  h1 .grad{background:linear-gradient(105deg,var(--signal),var(--signal-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.sub{max-width:680px;margin:20px auto 0;font-size:18px;color:var(--muted);line-height:1.55}
+  .hero p.sub b{color:var(--text);font-weight:600}
+
+  .converter{margin:38px auto 0;max-width:860px;text-align:left}
+  .console{border:1px solid var(--line-strong);border-radius:26px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(29,24,18,0.9),rgba(16,14,11,0.94));
+    box-shadow:0 40px 90px -30px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,236,210,0.06)}
+  .console-top{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--line)}
+  .console-top .tt{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .console-top .tt b{color:var(--text)}
+  .mode-note{display:flex;gap:10px;align-items:flex-start;padding:14px 22px;border-bottom:1px solid var(--line);
+    font-size:13.5px;color:var(--muted);background:rgba(92,224,182,0.04)}
+  .mode-note svg{width:18px;height:18px;color:var(--mint);flex:none;margin-top:1px}
+
+  .drop{margin:22px;border:2px dashed var(--line-strong);border-radius:20px;padding:42px 24px;text-align:center;cursor:pointer;
+    transition:border-color .2s,background .2s}
+  .drop:hover,.drop.drag{border-color:var(--signal);background:rgba(255,106,43,0.04)}
+  .drop h3{font-family:var(--display);font-size:22px;font-weight:700;margin-top:16px}
+  .drop p{color:var(--muted);font-size:14.5px;margin-top:8px}
+  .drop .formats{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:14px}
+  .drop .ring{width:56px;height:56px;margin:0 auto;border-radius:50%;display:grid;place-items:center;
+    background:var(--amber-dim);border:1px solid rgba(255,106,43,0.25)}
+  .drop .ring svg{width:26px;height:26px;color:var(--signal-2)}
+
+  .file-card{margin:0 22px 22px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--surface)}
+  .file-card .meta b{display:block;font-size:15px}
+  .file-card .meta span{font-family:var(--mono);font-size:12px;color:var(--faint)}
+  .file-card button{font-family:var(--mono);font-size:12px;color:var(--muted);background:none;border:1px solid var(--line);
+    border-radius:8px;padding:8px 12px;cursor:pointer}
+  .file-card button:hover{color:var(--text);border-color:var(--line-strong)}
+
+  .opts{padding:0 22px 22px}
+  .opts-head{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--signal-2);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+  .opts-head svg{width:16px;height:16px}
+  .opt-grid{display:grid;gap:18px}
+  .opt label{display:block;font-size:13px;font-weight:600;margin-bottom:10px}
+  .opt .tag{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--faint);margin-left:6px}
+  .opt .hint{font-size:12px;color:var(--faint);margin-top:8px;line-height:1.45}
+  .chips,.preset-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip,.preset{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;font-weight:500;
+    padding:8px 12px;border-radius:10px;border:1px solid var(--line);color:var(--muted);cursor:pointer;transition:.15s}
+  .chip:hover,.preset:hover{border-color:var(--line-strong);color:var(--text)}
+  .chip.on,.preset.on{background:var(--amber-dim);border-color:var(--signal);color:var(--signal-2)}
+  .preset .sub{font-size:10px;color:var(--faint)}
+  .preset.on .sub{color:var(--muted)}
+  .opt-in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--text);
+    font-family:var(--mono);font-size:13px;padding:10px 12px;margin-bottom:8px}
+  .opt-in:focus{outline:none;border-color:var(--signal)}
+  .toggle-row{display:grid;gap:8px}
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);
+    border-radius:10px;cursor:pointer;font-size:13.5px}
+  .switch .knob{width:38px;height:22px;border-radius:100px;background:var(--bg-2);border:1px solid var(--line);position:relative;flex:none}
+  .switch .knob::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--faint);transition:.2s}
+  .switch.on .knob{background:var(--mint-dim);border-color:rgba(92,224,182,0.4)}
+  .switch.on .knob::after{left:18px;background:var(--mint)}
+
+  .err{margin:0 22px 16px;padding:12px 14px;border-radius:11px;border:1px solid rgba(255,106,43,0.4);
+    background:var(--amber-dim);color:var(--signal-2);font-size:13.5px}
+  .err[hidden]{display:none}
+  .prog{height:3px;background:var(--bg-2);display:none}
+  .prog.on{display:block}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--signal),var(--signal-2));transition:width .3s}
+  .convert-bar{margin:0 22px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .summary{flex:1;font-size:14px;color:var(--muted);min-width:200px}
+  .summary b{color:var(--text)}
+  .btn-go{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(100deg,var(--signal),var(--signal-2));
+    color:#1a1208;border:none;font-family:var(--body);font-weight:700;font-size:15px;padding:14px 22px;border-radius:12px;cursor:pointer}
+  .btn-go:disabled{opacity:.45;cursor:not-allowed}
+  .btn-go svg{width:16px;height:16px}
+
+  .trust{display:flex;justify-content:center;flex-wrap:wrap;gap:20px;margin-top:28px;font-family:var(--mono);font-size:12px;color:var(--faint)}
+  .trust span{display:inline-flex;align-items:center;gap:7px}
+  .trust svg{width:14px;height:14px;color:var(--mint)}
+
+  .block{padding:64px 0}
+  .sec-head{margin-bottom:28px}
+  .sec-head.center{text-align:center}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--signal-2);margin-bottom:10px}
+  .sec-head h2{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);letter-spacing:-0.03em}
+  .sec-head p{color:var(--muted);margin-top:12px;max-width:640px}
+  .sec-head.center p{margin-left:auto;margin-right:auto}
+
+  .uc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:900px){.uc-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.uc-grid{grid-template-columns:1fr}}
+  .uc{border:1px solid var(--line);border-radius:var(--r);padding:22px;background:linear-gradient(180deg,var(--surface),var(--bg-2))}
+  .uc .top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .uc .emoji{font-size:22px}
+  .uc h4{font-family:var(--display);font-size:17px;font-weight:700}
+  .uc p{font-size:14.5px;color:var(--muted);line-height:1.5}
+  .uc .tagline{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--signal-2);
+    background:var(--amber-dim);padding:6px 10px;border-radius:8px}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:760px){.steps{grid-template-columns:1fr}}
+  .step{border:1px solid var(--line);border-radius:var(--r);padding:22px;background:var(--surface-2)}
+  .step .num{font-family:var(--display);font-size:28px;font-weight:800;color:var(--signal);opacity:.7}
+  .step h3{font-family:var(--display);font-size:18px;margin-top:8px}
+  .step p{font-size:14px;color:var(--muted);margin-top:8px}
+
+  .faq{max-width:760px;margin:0 auto;display:grid;gap:10px}
+  details.q{border:1px solid var(--line);border-radius:14px;padding:0 18px;background:var(--surface)}
+  details.q summary{list-style:none;cursor:pointer;padding:16px 0;font-weight:600;display:flex;justify-content:space-between;gap:12px}
+  details.q summary::-webkit-details-marker{display:none}
+  details.q .a{padding:0 0 16px;color:var(--muted);font-size:14.5px;line-height:1.55}
+  details.q .plus{font-family:var(--mono);color:var(--faint)}
+
+  footer{border-top:1px solid var(--line);padding:36px 0 48px;margin-top:20px}
+  .foot-in{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:12px;color:var(--faint)}
+</style>
+<script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="rn sn init kn Qr wn Cn yn capture calculateEventProperties Rn register register_once register_for_session unregister unregister_for_session An getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync Fn identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty On En createPersonProfile setInternalOrTestUser Ln gn $n opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing In debug Kr Pn getPageViewId captureTraceFeedback captureTraceMetric vn".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_vsQzP6xQyqaMAYcn7FbZEKFEyUQzkrN4ioRZB3Jj5g4z', {
+        api_host: 'https://eu.i.posthog.com',
+        defaults: '2026-05-30',
+        person_profiles: 'identified_only',
+    })
+</script>
+
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a href="/" class="brand">
+      <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
+      YouConvert<span class="io">.com</span>
+    </a>
+    <span class="nav-note">PDF → EPUB</span>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <span class="eyebrow">E-reader ready</span>
+  <h1>Turn PDFs into <span class="grad">EPUB books</span></h1>
+  <p class="sub">Read research papers, manuals, and self-published work on your <b>Kindle</b>, <b>Kobo</b>, or <b>Apple Books</b> app — with reflowable text, chapters, and typography tuned for small screens.</p>
+
+  <div class="converter" id="converter">
+    <div class="console">
+      <div class="console-top">
+        <div class="tt"><b>PDF → EPUB</b> · Calibre engine</div>
+      </div>
+      <div class="mode-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/></svg>
+        <span>Your PDF is uploaded securely, converted on our server with <b>Calibre</b>, and deleted after download. DRM-protected PDFs cannot be converted.</span>
+      </div>
+
+      <div class="err" id="error" hidden></div>
+
+      <div class="drop" id="drop">
+        <input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+        <div class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M10 13h4M10 17h7"/></svg></div>
+        <h3>Drop your PDF here</h3>
+        <p>or click to browse — one book at a time, up to 100&nbsp;MB</p>
+        <div class="formats">.pdf · text-based or print layouts</div>
+      </div>
+
+      <div class="file-card" id="fileCard" hidden>
+        <div class="meta">
+          <b id="fileName">document.pdf</b>
+          <span id="fileMeta">0 KB</span>
+        </div>
+        <button type="button" id="clearFileBtn">Remove</button>
+      </div>
+
+      <div class="opts" id="options">
+        <div class="opts-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>Conversion options</div>
+        <div class="opt-grid">
+          <div class="opt preset-bar">
+            <label>Quick presets <span class="tag">device</span></label>
+            <div class="preset-chips" id="presets">
+              <span class="preset on" data-preset="kindle"><span class="emoji">📱</span>Kindle<span class="sub">reflow · chapters</span></span>
+              <span class="preset" data-preset="kobo"><span class="emoji">📖</span>Kobo<span class="sub">reflow · chapters</span></span>
+              <span class="preset" data-preset="apple"><span class="emoji">🍎</span>Apple Books<span class="sub">iPad profile</span></span>
+              <span class="preset" data-preset="academic"><span class="emoji">🎓</span>Academic<span class="sub">headings · fonts</span></span>
+              <span class="preset" data-preset="fixed-layout"><span class="emoji">🖼️</span>Image-heavy<span class="sub">preserve layout</span></span>
+            </div>
+            <div class="hint">Start with the device you read on — tweak anything below.</div>
+          </div>
+
+          <div class="opt">
+            <label>Reader profile <span class="tag">--output-profile</span></label>
+            <div class="chips" id="profile">
+              <span class="chip on" data-value="kindle">Kindle</span>
+              <span class="chip" data-value="kobo">Kobo</span>
+              <span class="chip" data-value="ipad">Apple Books</span>
+              <span class="chip" data-value="generic">Generic tablet</span>
+            </div>
+            <div class="hint">Optimises margins, font scaling, and CSS for the target e-ink or tablet screen.</div>
+          </div>
+
+          <div class="opt">
+            <label>Text size <span class="tag">--base-font-size</span></label>
+            <div class="chips" id="textSize">
+              <span class="chip" data-value="small">Small</span>
+              <span class="chip on" data-value="default">Default</span>
+              <span class="chip" data-value="large">Large</span>
+              <span class="chip" data-value="xlarge">Extra large</span>
+            </div>
+            <div class="hint">Base body text in the finished EPUB. Readers can still resize on device.</div>
+          </div>
+
+          <div class="opt">
+            <label>Layout <span class="tag">reflow vs fixed</span></label>
+            <div class="chips" id="layout">
+              <span class="chip on" data-value="reflow">Reflow text</span>
+              <span class="chip" data-value="preserve">Preserve PDF layout</span>
+            </div>
+            <div class="hint">Reflow is best for novels and papers. Preserve helps comics, textbooks, and image-heavy pages.</div>
+          </div>
+
+          <div class="opt">
+            <label>Chapter breaks <span class="tag">--chapter</span></label>
+            <div class="chips" id="chapters">
+              <span class="chip on" data-value="headings">From headings</span>
+              <span class="chip" data-value="pages">From page breaks</span>
+              <span class="chip" data-value="none">No chapters</span>
+            </div>
+            <div class="hint">Builds a navigable table of contents for jumping between sections on your e-reader.</div>
+          </div>
+
+          <div class="opt">
+            <label>Cleanup &amp; typography</label>
+            <div class="toggle-row">
+              <div class="switch on" id="heuristicsSwitch"><span class="lab">Smart cleanup <span class="tag">--enable-heuristics</span></span><span class="knob"></span></div>
+              <div class="switch" id="embedFontsSwitch"><span class="lab">Embed fonts <span class="tag">--embed-all-fonts</span></span><span class="knob"></span></div>
+              <div class="switch on" id="removePageNumbersSwitch"><span class="lab">Remove page numbers <span class="tag">--remove-page-numbers</span></span><span class="knob"></span></div>
+              <div class="switch" id="blankLineSwitch"><span class="lab">Blank line between paragraphs</span><span class="knob"></span></div>
+            </div>
+            <div class="hint">Heuristic cleanup fixes broken line wraps and stray headers common in PDF exports.</div>
+          </div>
+
+          <div class="opt">
+            <label>Book metadata <span class="tag">optional</span></label>
+            <input class="opt-in" id="metaTitle" placeholder="Title (leave blank to keep PDF metadata)">
+            <input class="opt-in" id="metaAuthor" placeholder="Author">
+            <div class="hint">Shows on your e-reader library shelf. Calibre reads existing PDF metadata when these are empty.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="prog" id="prog"><i id="progBar"></i></div>
+      <div class="convert-bar">
+        <div class="summary" id="summary"><b>No file yet</b> — drop a PDF above to begin.</div>
+        <button class="btn-go" id="goBtn" disabled type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Convert to EPUB
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="trust">
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Reflowable EPUB3 output</span>
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Deleted after download</span>
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>No DRM added</span>
+  </div>
+</header>
+
+<section class="block wrap" id="uses">
+  <div class="sec-head">
+    <div class="kicker">Built for reading</div>
+    <h2>What people convert PDF to EPUB for.</h2>
+    <p>PDFs are made for printing. EPUBs are made for e-readers — adjustable type, night mode, bookmarks, and battery-friendly screens.</p>
+  </div>
+  <div class="uc-grid">
+    <div class="uc">
+      <div class="top"><span class="emoji">📚</span><h4>Kindle &amp; Kobo libraries</h4></div>
+      <p>Side-load indie ebooks, ARCs, and newsletters as EPUB instead of pinching and zooming a fixed PDF page.</p>
+      <span class="tagline">Kindle · Kobo presets</span>
+    </div>
+    <div class="uc">
+      <div class="top"><span class="emoji">🎓</span><h4>Research &amp; coursework</h4></div>
+      <p>Read journal articles and lecture notes on the bus with reflowable text and a proper chapter list.</p>
+      <span class="tagline">Heading-based chapters</span>
+    </div>
+    <div class="uc">
+      <div class="top"><span class="emoji">✍️</span><h4>Self-publishing drafts</h4></div>
+      <p>Proof your manuscript on a real e-reader before upload to KDP, Draft2Digital, or IngramSpark.</p>
+      <span class="tagline">Metadata · embed fonts</span>
+    </div>
+    <div class="uc">
+      <div class="top"><span class="emoji">📋</span><h4>Manuals &amp; documentation</h4></div>
+      <p>Turn long PDF handbooks into something you can read comfortably on a phone or e-ink tablet.</p>
+      <span class="tagline">Heuristic cleanup on</span>
+    </div>
+    <div class="uc">
+      <div class="top"><span class="emoji">♿</span><h4>Accessible reading</h4></div>
+      <p>Reflowable EPUB works better with screen readers and large system text than a locked PDF layout.</p>
+      <span class="tagline">Large text sizes</span>
+    </div>
+    <div class="uc">
+      <div class="top"><span class="emoji">🖼️</span><h4>Illustrated books</h4></div>
+      <p>Comics, cookbooks, and design portfolios can keep their page layout when reflow would break the art.</p>
+      <span class="tagline">Image-heavy preset</span>
+    </div>
+  </div>
+</section>
+
+<section class="block wrap" id="how">
+  <div class="sec-head center">
+    <div class="kicker">Under the hood</div>
+    <h2>Calibre does the heavy lifting.</h2>
+    <p>We use the same <code>ebook-convert</code> engine trusted by millions of ebook fans — tuned with the options above.</p>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h3>Upload your PDF</h3>
+      <p>Drag in a DRM-free PDF. Text-based files convert fastest; scanned pages may need OCR elsewhere first.</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h3>Pick a reader preset</h3>
+      <p>Choose Kindle, Kobo, or Apple Books — or fine-tune font size, chapters, and cleanup heuristics.</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <h3>Download EPUB</h3>
+      <p>Transfer via USB, email, or your e-reader app. Your PDF is removed from our servers after the job finishes.</p>
+    </div>
+  </div>
+</section>
+
+<section class="block wrap" id="faq">
+  <div class="sec-head center">
+    <div class="kicker">Good to know</div>
+    <h2>Questions, answered.</h2>
+  </div>
+  <div class="faq">
+    <details class="q" open>
+      <summary>Will this work with scanned PDFs?<span class="plus">+</span></summary>
+      <div class="a">Calibre converts text it can extract from the PDF. Pure image scans (photos of pages) need OCR first — try Adobe Acrobat, ocrmypdf, or similar, then convert the searchable PDF here.</div>
+    </details>
+    <details class="q">
+      <summary>Can I send the EPUB straight to my Kindle?<span class="plus">+</span></summary>
+      <div class="a">Download the EPUB, then use Amazon’s “Send to Kindle” app or email it to your Kindle address. For easiest Kindle transfer, some users prefer converting to AZW3 locally in Calibre — this tool outputs standard EPUB.</div>
+    </details>
+    <details class="q">
+      <summary>What about DRM-protected PDFs?<span class="plus">+</span></summary>
+      <div class="a">We can’t convert copy-protected files. Only use documents you own or have permission to reformat.</div>
+    </details>
+    <details class="q">
+      <summary>How is this different from reflow in Apple Books or Kindle?<span class="plus">+</span></summary>
+      <div class="a">Built-in PDF viewers still treat the file as a fixed page. EPUB stores real chapters and HTML text, so line breaks adapt to your font size and screen — a much better long-form reading experience.</div>
+    </details>
+    <details class="q">
+      <summary>Is my file kept on your servers?<span class="plus">+</span></summary>
+      <div class="a">No. The PDF is processed in a temporary workspace and deleted as soon as conversion completes. We don’t build a library from your uploads on this page.</div>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-in">
+    <span>© 2026 YouConvert.com</span>
+    <span>Standalone converter · not listed in site navigation</span>
+  </div>
+</footer>
+
+<script type="module" src="/public/pdf-to-epub.js"></script>
+</body>
+</html>

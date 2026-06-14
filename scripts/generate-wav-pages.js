@@ -29,8 +29,28 @@ const STANDALONE_PAGES = [
   'account.html',
   'create-account.html',
   'my-files.html',
+  'reset-password.html',
   'wavtomp3.html',
+  'pdf-to-epub.html',
+  'pdf-to-epub-publishing.html',
+  'xc-9f4e2a7b.html',
 ];
+
+function stripHtmlUrls(html) {
+  return html
+    .replace(/href="\/([^"#?]+)\.html"/gi, 'href="/$1/"')
+    .replace(/href="(\/[^"]+?)\.html([^"]*)"/gi, 'href="$1$2"')
+    .replace(/href="([^"/#?][^"#?]*?)\.html"/gi, 'href="/$1/"')
+    .replace(/'(\/[^']+?)\.html([^']*)'/g, "'$1$2'")
+    .replace(/window\.location\.href = '([^']+)\.html/g, "window.location.href = '$1/")
+    .replace(/window\.location\.href = "([^"]+)\.html/g, 'window.location.href = "$1/')
+    .replace(/encodeURIComponent\('\/([^']+)\.html'\)/g, "encodeURIComponent('/$1/')")
+    .replace(/encodeURIComponent\("\/([^"]+)\.html"\)/g, 'encodeURIComponent("/$1/")')
+    .replace(/next = params\.get\('next'\) \|\| '([^']+)\.html'/g, "next = params.get('next') || '$1/'")
+    .replace(/href="(\/[a-z0-9-]+)\?([a-z_]+=)/gi, 'href="$1/?$2')
+    .replace(/'(\/[a-z0-9-]+)\?([a-z_]+=)/g, "'$1/?$2'")
+    .replace(/next === '([^']+)\.html'/g, "next === '$1/'");
+}
 
 const posthogSnippet = fs.readFileSync(posthogSnippetPath, 'utf8');
 const faviconSnippet = fs.readFileSync(faviconSnippetPath, 'utf8');
@@ -49,7 +69,7 @@ function injectFavicon(html) {
 }
 
 function injectHeadExtras(html) {
-  return injectPosthog(injectFavicon(html));
+  return stripHtmlUrls(injectPosthog(injectFavicon(html)));
 }
 
 function injectPosthog(html) {

@@ -30,7 +30,7 @@
       <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
       YouConvert<span class="io">.com</span>
     </a>
-    <a href="/create-account.html" class="nav-link">Create account</a>
+    <a href="/create-account/" class="nav-link">Create account</a>
   </div>
 </nav>
 
@@ -50,12 +50,12 @@
       <div class="field">
         <label for="password">Password</label>
         <input type="password" id="password" name="password" required autocomplete="current-password">
-        <div class="hint"><a href="/reset-password.html">Forgot password?</a></div>
+        <div class="hint"><a href="/reset-password/">Forgot password?</a></div>
       </div>
       <button type="submit" class="btn" id="submitBtn">Log in</button>
     </form>
 
-    <p class="alt">Just subscribed? <a href="/create-account.html">Create your account</a></p>
+    <p class="alt">Just subscribed? <a href="/create-account/">Create your account</a></p>
   </div>
 </main>
 
@@ -68,7 +68,7 @@ import {
 } from '/public/session-store.js';
 
 const params = new URLSearchParams(window.location.search);
-let next = params.get('next') || '/account.html';
+let next = params.get('next') || '/account/';
 
 async function resolveNextAfterAuth() {
   if (!(await hasPendingCheckout())) return next;
@@ -83,7 +83,7 @@ const submitBtn = document.getElementById('submitBtn');
   const me = await fetch('/api/auth/me', { credentials: 'include' }).then((r) => r.json());
   if (me?.user) window.location.href = next;
 
-  if (next === '/account.html' && (await hasPendingCheckout())) {
+  if (next === '/account/' && (await hasPendingCheckout())) {
     next = await resolveNextAfterAuth();
   }
 })();
@@ -112,20 +112,20 @@ form.addEventListener('submit', async (e) => {
         const alt = document.querySelector('.alt');
         if (alt) {
           alt.innerHTML =
-            `Set up your account: <a href="/create-account.html?email=${email}">Create account with your subscription email</a>`;
+            `Set up your account: <a href="/create-account/?email=${email}">Create account with your subscription email</a>`;
         }
       } else if (res.status === 401) {
         const email = encodeURIComponent(document.getElementById('email').value.trim());
         const hint = document.querySelector('.field .hint');
         if (hint) {
-          hint.innerHTML = `<a href="/reset-password.html?email=${email}">Forgot password?</a>`;
+          hint.innerHTML = `<a href="/reset-password/?email=${email}">Forgot password?</a>`;
         }
       }
       setLoading(submitBtn, false, 'Log in');
       return;
     }
 
-    if (next === '/account.html' && (await hasPendingCheckout())) {
+    if (next === '/account/' && (await hasPendingCheckout())) {
       next = await resolveNextAfterAuth();
     }
     window.location.href = next;

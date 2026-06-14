@@ -1148,11 +1148,11 @@ function updateNavAuth() {
     currentUser = data?.user || null;
     if (data?.user) {
       link.textContent = 'Account';
-      link.href = '/account.html';
+      link.href = '/account/';
       if (filesLink) filesLink.hidden = false;
     } else {
       link.textContent = 'Log in';
-      link.href = '/login.html';
+      link.href = '/login/';
       if (filesLink) filesLink.hidden = true;
     }
   });

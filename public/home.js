@@ -96,7 +96,7 @@ async function updateNavAuth() {
   const data = await fetchMe();
   if (data?.user) {
     navAccount.textContent = 'Account';
-    navAccount.href = '/account.html';
+    navAccount.href = '/account/';
     if (navFiles) navFiles.hidden = false;
   }
 }

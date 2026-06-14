@@ -7,7 +7,7 @@ export async function fetchMe() {
   return res.json();
 }
 
-export async function requireAuth(redirectTo = '/login.html') {
+export async function requireAuth(redirectTo = '/login/') {
   const me = await fetchMe();
   if (!me?.user) {
     const next = encodeURIComponent(window.location.pathname + window.location.search);

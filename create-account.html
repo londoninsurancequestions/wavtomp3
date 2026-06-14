@@ -30,7 +30,7 @@
       <span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>
       YouConvert<span class="io">.com</span>
     </a>
-    <a href="/login.html" class="nav-link">Already have an account?</a>
+    <a href="/login/" class="nav-link">Already have an account?</a>
   </div>
 </nav>
 
@@ -64,7 +64,7 @@
       <button type="submit" class="btn" id="submitBtn">Create account &amp; start converting</button>
     </form>
 
-    <p class="alt">Already created an account? <a href="/login.html">Log in</a></p>
+    <p class="alt">Already created an account? <a href="/login/">Log in</a></p>
   </div>
 </main>
 
@@ -93,7 +93,7 @@ const paidBanner = document.getElementById('paidBanner');
 async function init() {
   const me = await fetch('/api/auth/me', { credentials: 'include' }).then((r) => r.json());
   if (me?.user) {
-    window.location.href = '/account.html';
+    window.location.href = '/account/';
     return;
   }
 
@@ -111,7 +111,7 @@ async function init() {
         if (loginLink) {
           const returnTo = await resolveReturnTo();
           loginLink.href =
-            '/login.html?next=' + encodeURIComponent(postAuthRedirectUrl(returnTo));
+            '/login/?next=' + encodeURIComponent(postAuthRedirectUrl(returnTo));
         }
         return;
       }

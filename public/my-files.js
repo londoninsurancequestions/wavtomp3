@@ -208,7 +208,7 @@ async function deleteFile(id, container) {
 }
 
 async function init() {
-  const me = await requireAuth('/login.html?next=' + encodeURIComponent('/my-files.html'));
+  const me = await requireAuth('/login/?next=' + encodeURIComponent('/my-files/'));
   if (!me) return;
 
   const container = document.getElementById('filesList');

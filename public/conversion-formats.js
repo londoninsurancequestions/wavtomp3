@@ -122,7 +122,7 @@ function route(input, spec) {
     inputLabel: inputFmt.label,
     slug: spec.slug,
     label: spec.label,
-    path: `/${input}-to-${spec.slug}.html`,
+    path: `/${input}-to-${spec.slug}/`,
     ...spec,
   };
 }
