@@ -34,9 +34,14 @@ function esc(s) {
 }
 
 function subBadge(sub) {
-  if (!sub?.active) return '<span class="badge inactive">Inactive</span>';
-  if (sub.cancelAtPeriodEnd) return '<span class="badge canceling">Canceling</span>';
-  return '<span class="badge active">Active</span>';
+  if (sub?.active) {
+    if (sub.cancelAtPeriodEnd) return '<span class="badge canceling">Canceling</span>';
+    return '<span class="badge active">Active</span>';
+  }
+  if (sub?.status === 'canceled') return '<span class="badge inactive">Canceled</span>';
+  if (sub?.status === 'past_due') return '<span class="badge canceling">Past due</span>';
+  if (sub?.status) return `<span class="badge inactive">${esc(sub.status.replace(/_/g, ' '))}</span>`;
+  return '<span class="badge inactive">Inactive</span>';
 }
 
 async function ensureAdmin() {

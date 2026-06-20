@@ -15,6 +15,7 @@ import {
   findUserByStripeCustomerId,
   createUser,
   updateUserPassword,
+  updateUserStripeCustomerId,
   markCheckoutSessionUsed,
   isCheckoutSessionUsed,
   countUsers,
@@ -32,6 +33,7 @@ import { sealJobId, sealFileId, openJobToken, openFileToken } from './lib/conver
 import {
   hasActiveSubscription,
   getSubscriptionSummary,
+  resolveUserStripeContext,
   cancelSubscriptionAtPeriodEnd,
   cancelSubscriptionImmediately,
   reactivateSubscription,
@@ -134,6 +136,22 @@ function publicUser(user) {
     email: user.email,
     createdAt: user.created_at,
   };
+}
+
+async function loadUserSubscription(user) {
+  if (!stripe || !user) return { subscription: null, customerId: user?.stripe_customer_id || null };
+
+  try {
+    const ctx = await resolveUserStripeContext(stripe, user);
+    if (ctx.relinked && ctx.customerId) {
+      await updateUserStripeCustomerId(user.id, ctx.customerId);
+      user.stripe_customer_id = ctx.customerId;
+    }
+    return { subscription: ctx.subscription, customerId: ctx.customerId };
+  } catch (err) {
+    console.error('Subscription lookup error:', err.message);
+    return { subscription: null, customerId: user.stripe_customer_id };
+  }
 }
 
 /* ---------- Stripe webhook needs raw body ---------- */
@@ -301,7 +319,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   const subscriptionActive = stripe
-    ? await hasActiveSubscription(stripe, user.stripe_customer_id)
+    ? (await loadUserSubscription(user)).subscription?.active ?? false
     : false;
 
   const token = signToken(user);
@@ -398,14 +416,7 @@ app.get('/api/auth/me', async (req, res) => {
     return res.json({ user: null, subscriptionActive: false });
   }
 
-  let subscription = null;
-  if (stripe) {
-    try {
-      subscription = await getSubscriptionSummary(stripe, user.stripe_customer_id);
-    } catch (err) {
-      console.error('Subscription lookup error:', err.message);
-    }
-  }
+  const { subscription } = await loadUserSubscription(user);
 
   res.json({
     user: publicUser(user),
@@ -913,17 +924,14 @@ app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   try {
-    let subscription = null;
-    let invoices = [];
-    if (stripe && user.stripe_customer_id) {
-      subscription = await getSubscriptionSummary(stripe, user.stripe_customer_id);
-      invoices = await listCustomerInvoices(stripe, user.stripe_customer_id);
-    }
+    const { subscription, customerId } = await loadUserSubscription(user);
+    const invoices =
+      stripe && customerId ? await listCustomerInvoices(stripe, customerId) : [];
 
     const formatStats = await getFormatStatsForUser(userId);
     res.json({
       user: publicUser(user),
-      stripeCustomerId: user.stripe_customer_id,
+      stripeCustomerId: customerId || user.stripe_customer_id,
       subscription,
       invoices,
       conversionCount: await countConversionEventsForUser(userId),

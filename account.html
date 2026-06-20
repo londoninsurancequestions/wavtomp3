@@ -116,6 +116,26 @@ const keepSubBtn = document.getElementById('keepSubBtn');
 const subHint = document.getElementById('subHint');
 const invoicesEl = document.getElementById('invoices');
 
+const DEFAULT_SUB_HINT =
+  "Cancel anytime — you'll keep access until the end of your billing period.";
+
+function subscriptionStatusLabel(status) {
+  switch (status) {
+    case 'canceled':
+      return 'Canceled';
+    case 'past_due':
+      return 'Past due';
+    case 'unpaid':
+      return 'Unpaid';
+    case 'incomplete':
+      return 'Incomplete';
+    case 'incomplete_expired':
+      return 'Expired';
+    default:
+      return 'Inactive';
+  }
+}
+
 function renderSubscription(sub) {
   subErr.hidden = true;
 
@@ -148,13 +168,38 @@ function renderSubscription(sub) {
       cancelSubBtn.hidden = false;
       keepSubBtn.hidden = true;
       subHint.hidden = false;
+      subHint.textContent = DEFAULT_SUB_HINT;
     }
   } else {
-    subStatus.innerHTML = '<span class="badge inactive">Inactive</span>';
-    subPlan.textContent = '—';
-    subRenews.textContent = '—';
+    const status = sub?.status || 'inactive';
+    const label = subscriptionStatusLabel(status);
+    const badgeClass = status === 'past_due' || status === 'unpaid' ? 'canceling' : 'inactive';
+    subStatus.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
+
+    subPlan.textContent = sub?.plan
+      ? sub.plan + (sub.amount ? ` · ${formatMoney(sub.amount * 100, sub.currency)}` : '')
+      : '—';
+
+    if (sub?.currentPeriodEnd && status === 'canceled') {
+      subRenews.textContent = `Ended ${formatDate(sub.currentPeriodEnd)}`;
+    } else if (sub?.currentPeriodEnd && (status === 'past_due' || status === 'unpaid')) {
+      subRenews.textContent = `Due ${formatDate(sub.currentPeriodEnd)}`;
+    } else {
+      subRenews.textContent = '—';
+    }
+
     subActions.hidden = true;
-    subHint.hidden = true;
+    subHint.hidden = false;
+    if (status === 'canceled') {
+      subHint.textContent =
+        'Your subscription is no longer active. If this looks wrong after a recent payment, log out and back in, or contact support.';
+    } else if (status === 'past_due' || status === 'unpaid') {
+      subHint.textContent =
+        'Your latest renewal payment failed. Update your payment method to restore access.';
+    } else {
+      subHint.textContent =
+        'No active subscription was found for this account. If you recently paid, log out and back in.';
+    }
   }
 }
 
