@@ -107,12 +107,23 @@ export const INPUT_DETECTORS = [
   INPUT_WMA,
 ];
 
+export const ALL_INPUT_ACCEPT = INPUT_DETECTORS.map((f) => f.accept).join(',');
+
 export function getInputFormat(slug) {
   return INPUT_FORMATS[slug] || INPUT_WAV;
 }
 
-export function detectInputFormat(file) {
+/** Assign each file to exactly one input format — extension wins over MIME. */
+export function assignInputFormat(file) {
+  for (const fmt of INPUT_DETECTORS) {
+    if (new RegExp(`\\.${fmt.ext}$`, 'i').test(file.name)) return fmt;
+  }
+  if (/\.wave$/i.test(file.name)) return INPUT_WAV;
   return INPUT_DETECTORS.find((fmt) => fmt.matches(file)) || null;
+}
+
+export function detectInputFormat(file) {
+  return assignInputFormat(file);
 }
 
 function route(input, spec) {
@@ -606,7 +617,9 @@ export function findRoute(inputSlug, outputSlug) {
 }
 
 export function relatedFormatsHtml(inputSlug, currentSlug) {
-  const routes = getRoutes(inputSlug);
+  const routes = getRoutes(inputSlug)
+    .slice()
+    .sort((a, b) => a.label.localeCompare(b.label));
   const inputLabel = getInputFormat(inputSlug).label;
   return routes
     .map((f) => {
@@ -617,7 +630,9 @@ export function relatedFormatsHtml(inputSlug, currentSlug) {
 }
 
 export function formatCtasHtml(inputSlug) {
-  const routes = getRoutes(inputSlug);
+  const routes = getRoutes(inputSlug)
+    .slice()
+    .sort((a, b) => a.label.localeCompare(b.label));
   const inputLabel = getInputFormat(inputSlug).label;
   return routes
     .map(

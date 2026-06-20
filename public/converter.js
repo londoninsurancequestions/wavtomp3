@@ -13,7 +13,10 @@ import {
   getRoute,
   INPUT_DETECTORS,
   findRoute,
+  assignInputFormat,
+  ALL_INPUT_ACCEPT,
 } from '/public/conversion-formats.js';
+import { modalTestimonialsHtml } from '/public/testimonials.js';
 
 const inputSlug = document.documentElement.dataset.inputFormat || 'wav';
 const outputSlug = document.documentElement.dataset.outputFormat || 'mp3';
@@ -21,7 +24,7 @@ const inputFormat = getInputFormat(inputSlug);
 const outputFormat = getRoute(inputSlug, outputSlug);
 
 /* ---------- state ---------- */
-let conversionMode = 'local';
+let conversionMode = null;
 let fileStore = [];
 let converted = false;
 let selectedPlan = 'monthly';
@@ -33,11 +36,20 @@ let ffmpegReady = false;
 let subscriptionActive = false;
 let currentUser = null;
 
+const PREVIEW_DOWNLOAD_SECONDS = 10;
+const PREVIEW_PLAY_SECONDS = 30;
+
 const PLANS = {
   monthly: { cta: 'Unlock Now' },
   annual: { cta: 'Unlock Now' },
 };
 
+const SVG_PREVIEW_HEAD =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="20" cy="16" r="3"/></svg>';
+const SVG_DOWNLOAD_HEAD =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>';
+const SVG_DONE =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
 const SVG_PLAY =
   '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4z"/></svg>';
 const SVG_PAUSE =
@@ -49,6 +61,7 @@ const SVG_CHECK =
 
 const drop = document.getElementById('drop');
 const input = document.getElementById('fileInput');
+if (input) input.accept = ALL_INPUT_ACCEPT;
 const filesEl = document.getElementById('files');
 const optsEl = document.querySelector('.opts');
 let activePreset = 'music';
@@ -211,6 +224,13 @@ document.querySelectorAll('.uc[data-preset]').forEach((card) => {
 });
 
 /* ---------- mode toggle ---------- */
+function revealUploadStep() {
+  const step = document.getElementById('uploadStep');
+  if (!step || step.classList.contains('ready')) return;
+  step.classList.add('ready');
+  if (fileStore.length > 0) scrollToConvertButton();
+}
+
 window.setMode = function setMode(mode) {
   conversionMode = mode;
   const seg = document.getElementById('seg');
@@ -218,6 +238,7 @@ window.setMode = function setMode(mode) {
     b.classList.toggle('active', b.dataset.mode === mode)
   );
   seg.classList.toggle('server', mode === 'server');
+  seg.classList.add('chosen');
 
   const note = document.getElementById('modeNote');
   const text = document.getElementById('modeText');
@@ -236,6 +257,7 @@ window.setMode = function setMode(mode) {
       '<b>Server-powered.</b> Big batches and multi-gigabyte sessions run on dedicated workers. Uploads are encrypted in transit and auto-deleted right after you download.';
     optsEl.style.display = 'none';
   }
+  revealUploadStep();
   updateSummary();
 };
 
@@ -248,7 +270,10 @@ window.toggleTrim = function toggleTrim(el) {
 
 /* ---------- drag & drop ---------- */
 drop.addEventListener('click', () => input.click());
-input.addEventListener('change', (e) => addFiles(e.target.files));
+input.addEventListener('change', (e) => {
+  processDroppedFiles(e.target.files);
+  e.target.value = '';
+});
 ['dragenter', 'dragover'].forEach((ev) =>
   drop.addEventListener(ev, (e) => {
     e.preventDefault();
@@ -261,7 +286,31 @@ input.addEventListener('change', (e) => addFiles(e.target.files));
     drop.classList.remove('drag');
   })
 );
-drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
+drop.addEventListener('drop', (e) => {
+  e.stopPropagation();
+  processDroppedFiles(e.dataTransfer.files);
+});
+
+const converterEl = document.getElementById('converter');
+if (converterEl) {
+  ['dragenter', 'dragover'].forEach((ev) => {
+    converterEl.addEventListener(ev, (e) => {
+      if (!e.dataTransfer?.types?.includes('Files')) return;
+      e.preventDefault();
+      drop?.classList.add('drag');
+    });
+  });
+  converterEl.addEventListener('dragleave', (e) => {
+    if (converterEl.contains(e.relatedTarget)) return;
+    drop?.classList.remove('drag');
+  });
+  converterEl.addEventListener('drop', (e) => {
+    if (!e.dataTransfer?.files?.length) return;
+    e.preventDefault();
+    drop?.classList.remove('drag');
+    processDroppedFiles(e.dataTransfer.files);
+  });
+}
 
 function fmtBytes(b) {
   if (b > 1e9) return (b / 1e9).toFixed(2) + ' GB';
@@ -380,13 +429,21 @@ function scrollToConvertButton() {
   });
 }
 
+function scrollToConvertButtonAfterLayout() {
+  setTimeout(scrollToConvertButton, 400);
+}
+
 let formatRedirectPending = null;
 
 function bucketFilesByInput(files) {
-  return INPUT_DETECTORS.map((fmt) => ({
-    fmt,
-    files: files.filter((f) => fmt.matches(f)),
-  })).filter((b) => b.files.length > 0);
+  const map = new Map();
+  for (const file of files) {
+    const fmt = assignInputFormat(file);
+    if (!fmt) continue;
+    if (!map.has(fmt.slug)) map.set(fmt.slug, { fmt, files: [] });
+    map.get(fmt.slug).files.push(file);
+  }
+  return [...map.values()];
 }
 
 function pushFileToStore(f) {
@@ -460,7 +517,7 @@ window.goToFormatRedirect = async function goToFormatRedirect() {
   goBtn.disabled = true;
   goBtn.textContent = 'Saving files…';
   try {
-    await savePendingFiles(files, detectedFmt.slug);
+    await savePendingFiles(files, detectedFmt.slug, { outputSlug });
     window.location.href = route.path;
   } catch (err) {
     console.error('Could not stage files for redirect:', err);
@@ -472,7 +529,7 @@ window.goToFormatRedirect = async function goToFormatRedirect() {
 };
 
 function isRecognizedAudioFile(file) {
-  return INPUT_DETECTORS.some((fmt) => fmt.matches(file));
+  return assignInputFormat(file) !== null;
 }
 
 function showUnsupportedModal(files) {
@@ -486,7 +543,21 @@ function showUnsupportedModal(files) {
   );
 }
 
-function handleMismatchedFiles(otherFiles) {
+async function redirectToMatchingConverter({ files, detectedFmt, route }) {
+  const sum = document.getElementById('summary');
+  if (sum) {
+    sum.innerHTML = `<b>Switching to ${detectedFmt.label} → ${outputFormat.label}…</b> Your files are coming with you.`;
+  }
+  try {
+    await savePendingFiles(files, detectedFmt.slug, { outputSlug });
+    window.location.href = route.path;
+  } catch (err) {
+    console.error('Could not stage files for redirect:', err);
+    showFormatRedirectModal({ files, detectedFmt, route });
+  }
+}
+
+async function handleMismatchedFiles(otherFiles) {
   if (!otherFiles.length) return;
 
   const unknown = otherFiles.filter((f) => !isRecognizedAudioFile(f));
@@ -517,10 +588,34 @@ function handleMismatchedFiles(otherFiles) {
     return;
   }
 
-  showFormatRedirectModal({ files, detectedFmt, route });
+  await redirectToMatchingConverter({ files, detectedFmt, route });
 }
 
-function addFiles(list) {
+function ensureModeForMatchingFiles(files) {
+  if (conversionMode) return;
+  if (!files.some((f) => inputFormat.matches(f))) return;
+  const needsServer =
+    outputFormat.localSupported === false || inputFormat.localSupported === false;
+  setMode(needsServer ? 'server' : 'local');
+}
+
+async function processDroppedFiles(list) {
+  const files = [...list];
+  if (!files.length) return;
+
+  const matching = files.filter((f) => inputFormat.matches(f));
+  const other = files.filter((f) => !inputFormat.matches(f));
+
+  if (!matching.length && other.length) {
+    await handleMismatchedFiles(other);
+    return;
+  }
+
+  ensureModeForMatchingFiles(matching);
+  addFiles(list);
+}
+
+function addFiles(list, { scroll = true } = {}) {
   const files = [...list];
   const matching = files.filter((f) => inputFormat.matches(f));
   const other = files.filter((f) => !inputFormat.matches(f));
@@ -529,7 +624,13 @@ function addFiles(list) {
   matching.forEach(pushFileToStore);
   converted = false;
   renderFiles();
-  if (fileStore.length > countBefore) scrollToConvertButton();
+  if (
+    scroll &&
+    fileStore.length > countBefore &&
+    document.getElementById('uploadStep')?.classList.contains('ready')
+  ) {
+    scrollToConvertButton();
+  }
 
   handleMismatchedFiles(other);
 }
@@ -588,18 +689,15 @@ function renderFiles() {
       row.querySelector('[data-rm]').addEventListener('click', () => removeFile(i));
       filesEl.appendChild(row);
     } else {
-      const base = item.outputName.replace(new RegExp('\\.' + outputFormat.ext + '$', 'i'), '');
       const cap = item.unlocked
         ? item.duration || 0
-        : Math.min(30, item.duration || 30);
-      const previewLabel = item.unlocked
-        ? 'Full preview'
-        : 'Preview — first 30 seconds (free)';
+        : Math.min(PREVIEW_PLAY_SECONDS, item.duration || PREVIEW_PLAY_SECONDS);
+      const previewSub = item.unlocked
+        ? 'Full length'
+        : `${PREVIEW_PLAY_SECONDS}s listen · ${PREVIEW_DOWNLOAD_SECONDS}s download`;
       const card = document.createElement('div');
       card.className = 'result-card' + (item.unlocked ? ' unlocked' : '');
       card.dataset.i = i;
-      const lockSvg =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>';
 
       const statsLabel =
         conversionMode === 'server'
@@ -607,38 +705,52 @@ function renderFiles() {
           : `${br}k ${mode2} · ${ch} · ${estBytes ? '≈ ' + fmtBytes(estBytes) : '—'}`;
 
       card.innerHTML = `
-        <div class="rc-top">
-          <div class="rc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="20" cy="16" r="3"/></svg></div>
-          <div class="rc-meta">
-            <div class="nm">${item.outputName} <span class="ready">READY</span></div>
-            <div class="stats">${statsLabel}</div>
+        <div class="result-banner">
+          <div class="result-banner-icon">${SVG_DONE}</div>
+          <div class="result-banner-text">
+            <strong>Conversion complete</strong>
+            <span class="result-filename">${item.outputName}</span>
+            <span class="stats">${statsLabel}</span>
+          </div>
+          <span class="ready-pill">READY</span>
+        </div>
+        <div class="result-section result-preview">
+          <div class="result-section-head">${SVG_PREVIEW_HEAD} Preview your file<span class="sub">${previewSub}</span></div>
+          <div class="preview">
+            <button class="play-btn" data-play="${i}">${SVG_PLAY}</button>
+            <div class="wave">${buildWave(item.file.name)}</div>
+            <div class="ptime">0:00 / ${fmtTime(cap)}</div>
           </div>
           ${
             item.unlocked
-              ? '<span class="lock-chip" style="color:var(--mint);border-color:var(--line-strong)">' +
-                SVG_CHECK +
-                ' Unlocked</span>'
-              : '<span class="lock-chip">' + lockSvg + ' Locked</span>'
+              ? ''
+              : `<div class="preview-actions">
+            <button class="dl-preview" type="button" data-preview-dl="${i}">${SVG_DL} Download preview</button>
+          </div>`
           }
         </div>
-        <div class="preview-label"><span>${previewLabel}</span><span class="bar"></span></div>
-        <div class="preview">
-          <button class="play-btn" data-play="${i}">${SVG_PLAY}</button>
-          <div class="wave">${buildWave(item.file.name)}</div>
-          <div class="ptime">0:00 / ${fmtTime(cap)}</div>
-        </div>
-        <div class="rc-actions">
+        <div class="result-section result-download">
+          <div class="result-section-head">${SVG_DOWNLOAD_HEAD} Download your file</div>
+          <div class="rc-actions">
           ${
             item.unlocked
               ? `<a class="dl-unlocked" href="${item.url}" download="${item.outputName}">${SVG_DL} Download ${outputFormat.label}</a>
                  <button class="btn-clear" data-clear="${i}">Clear from list</button>`
-              : `<button class="btn-unlock" data-unlock="${i}">${lockSvg} Unlock conversions</button>
-                 <button class="dl-locked" data-unlock="${i}">${lockSvg} Unlock</button>
+              : `<button class="btn-unlock" data-unlock="${i}">${SVG_DL} Download ${outputFormat.label}</button>
                  <button class="btn-clear subtle" data-clear="${i}">Remove</button>`
+          }
+          </div>
+          ${
+            item.unlocked
+              ? ''
+              : '<p class="result-download-note">Listen free, or download a ' +
+                PREVIEW_DOWNLOAD_SECONDS +
+                '-second preview above. Unlock to export the full file without limits.</p>'
           }
         </div>`;
 
       card.querySelector('[data-play]')?.addEventListener('click', () => togglePreview(i));
+      card.querySelector('[data-preview-dl]')?.addEventListener('click', () => downloadPreviewClip(i));
       card.querySelectorAll('[data-unlock]').forEach((btn) =>
         btn.addEventListener('click', () => openUnlockModal(i))
       );
@@ -654,6 +766,7 @@ function renderFiles() {
 function updateSummary() {
   renderEstimatesOnly();
   const sum = document.getElementById('summary');
+  if (!sum) return;
   if (fileStore.length === 0) {
     converted = false;
     sum.innerHTML = `<b>No files yet</b> — drop ${inputFormat.label} files above to get started.`;
@@ -696,6 +809,94 @@ function renderEstimatesOnly() {
       est.innerHTML = `${estBytes ? '≈ ' + fmtBytes(estBytes) : '—'}<small>at ${br}k</small>`;
   });
 }
+
+function previewDownloadName(outputName) {
+  const base = outputName.replace(new RegExp('\\.' + outputFormat.ext + '$', 'i'), '');
+  return `${base}-preview-${PREVIEW_DOWNLOAD_SECONDS}s.${outputFormat.ext}`;
+}
+
+async function getPreviewClipBlob(item) {
+  if (item.previewClipBlob) return item.previewClipBlob;
+
+  const ff = await loadFfmpeg();
+  const ext = outputFormat.ext;
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const inFile = `prev-in-${token}.${ext}`;
+  const outFile = `prev-out-${token}.${ext}`;
+
+  await ff.writeFile(inFile, await fetchFile(item.blob));
+
+  const trimArgs = (extra = []) => [
+    '-i',
+    inFile,
+    '-t',
+    String(PREVIEW_DOWNLOAD_SECONDS),
+    ...extra,
+    '-y',
+    outFile,
+  ];
+
+  try {
+    try {
+      await ff.exec(trimArgs(['-c:a', 'copy']));
+    } catch {
+      await ff.exec(trimArgs());
+    }
+    const output = await ff.readFile(outFile);
+    item.previewClipBlob = new Blob([output.buffer], { type: outputFormat.mime });
+    return item.previewClipBlob;
+  } finally {
+    try {
+      await ff.deleteFile(inFile);
+    } catch {
+      /* ignore */
+    }
+    try {
+      await ff.deleteFile(outFile);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+window.downloadPreviewClip = async function downloadPreviewClip(i) {
+  const item = fileStore[i];
+  if (!item?.blob) return;
+
+  const btn = document.querySelector(`[data-preview-dl="${i}"]`);
+  const defaultLabel = `${SVG_DL} Download preview`;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = 'Preparing preview…';
+  }
+
+  try {
+    const blob = await getPreviewClipBlob(item);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = previewDownloadName(item.outputName);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    console.error('Preview download failed:', err);
+    if (btn) {
+      btn.innerHTML = 'Preview download failed — try again';
+      btn.disabled = false;
+      setTimeout(() => {
+        btn.innerHTML = defaultLabel;
+      }, 2500);
+    }
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = defaultLabel;
+  }
+};
 
 /* ---------- FFmpeg WASM ---------- */
 async function loadFfmpeg(onProgress) {
@@ -880,6 +1081,7 @@ function setItemConverted(item, blob) {
   item.url = URL.createObjectURL(blob);
   item.outputSize = blob.size;
   item.state = 'converted';
+  item.previewClipBlob = null;
   item.unlocked = subscriptionActive;
   if (item.audio) {
     item.audio.pause();
@@ -949,7 +1151,7 @@ async function saveAllToLibrary() {
 
 /* ---------- convert ---------- */
 window.convert = async function convert() {
-  if (fileStore.length === 0 || converted) return;
+  if (!conversionMode || fileStore.length === 0 || converted) return;
 
   const prog = document.getElementById('prog');
   const bar = document.getElementById('progBar');
@@ -1037,7 +1239,7 @@ window.togglePreview = function togglePreview(i) {
 
   const cap = item.unlocked
     ? item.duration || 999999
-    : Math.min(30, item.duration || 30);
+    : Math.min(PREVIEW_PLAY_SECONDS, item.duration || PREVIEW_PLAY_SECONDS);
 
   if (activePreview?.i === i && !activePreview.audio.paused) {
     activePreview.audio.pause();
@@ -1223,7 +1425,8 @@ async function restorePendingSession() {
   });
 
   converted = true;
-  if (saved.conversionMode) conversionMode = saved.conversionMode;
+  if (saved.conversionMode) setMode(saved.conversionMode);
+  else revealUploadStep();
 
   await clearPendingCheckout();
   renderFiles();
@@ -1356,14 +1559,31 @@ async function loadStagedHomeFiles() {
     const pending = await loadPendingFiles();
     if (!pending?.files?.length) return;
     if (pending.inputSlug && pending.inputSlug !== inputSlug) return;
+    if (pending.outputSlug && pending.outputSlug !== outputSlug) return;
+
+    const matching = pending.files.filter((f) => inputFormat.matches(f));
+    if (!matching.length) return;
+
     await clearPendingFiles();
-    addFiles(pending.files);
+
+    if (!conversionMode) {
+      ensureModeForMatchingFiles(matching);
+    } else if (!document.getElementById('uploadStep')?.classList.contains('ready')) {
+      revealUploadStep();
+    }
+
+    addFiles(pending.files, { scroll: false });
+
+    if (fileStore.length > 0) {
+      scrollToConvertButtonAfterLayout();
+    }
   } catch (err) {
     console.warn('Could not restore staged files:', err);
   }
 }
 
 async function init() {
+  document.getElementById('modalTestimonials')?.insertAdjacentHTML('beforeend', modalTestimonialsHtml());
   configureFormatUI();
   applyPreset('music');
   await loadStagedHomeFiles();

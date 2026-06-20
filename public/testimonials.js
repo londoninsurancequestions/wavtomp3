@@ -112,6 +112,26 @@ export function testimonialCardHtml(t) {
     </div>`;
 }
 
+export function modalTestimonialHtml(t) {
+  const avatarClass = t.avatar && t.avatar !== 'm1' ? ` ${t.avatar}` : '';
+  return `<blockquote class="modal-tst">
+      <p>${t.quote}</p>
+      <footer class="modal-tst-who">
+        <div class="av${avatarClass}">${t.initials}</div>
+        <cite class="nm">${t.name}</cite>
+      </footer>
+    </blockquote>`;
+}
+
+export function modalTestimonialsHtml() {
+  const picks = [
+    TESTIMONIALS.find((t) => t.name === 'Aisha Patel'),
+    TESTIMONIALS.find((t) => t.name === 'Theo Okafor'),
+    TESTIMONIALS.find((t) => t.name === 'Mara Reyes'),
+  ].filter(Boolean);
+  return picks.map(modalTestimonialHtml).join('');
+}
+
 export function featuredTestimonialsHtml() {
   return TESTIMONIALS.filter((t) => t.featured).map(testimonialCardHtml).join('\n    ');
 }

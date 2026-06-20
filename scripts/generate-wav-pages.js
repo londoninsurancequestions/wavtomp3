@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
 const convertTemplatePath = path.join(root, 'templates/convert.html');
 const homeTemplatePath = path.join(root, 'templates/home.html');
+const convertersTemplatePath = path.join(root, 'templates/converters.html');
 const testimonialsTemplatePath = path.join(root, 'templates/testimonials.html');
 const termsTemplatePath = path.join(root, 'templates/terms.html');
 const privacyTemplatePath = path.join(root, 'templates/privacy.html');
@@ -120,20 +121,36 @@ function buildConvertPage(template, route) {
   return injectHeadExtras(html);
 }
 
-function buildHomePage(template) {
-  return injectHeadExtras(
-    template
+function injectFormatCtas(template) {
+  return template
     .replace('{{WAV_CTAS}}', formatCtasHtml('wav'))
     .replace('{{M4A_CTAS}}', formatCtasHtml('m4a'))
     .replace('{{AAC_CTAS}}', formatCtasHtml('aac'))
     .replace('{{MP3_CTAS}}', formatCtasHtml('mp3'))
     .replace('{{OGG_CTAS}}', formatCtasHtml('ogg'))
-    .replace('{{WMA_CTAS}}', formatCtasHtml('wma'))
+    .replace('{{WMA_CTAS}}', formatCtasHtml('wma'));
+}
+
+function buildHomePage(template) {
+  return injectHeadExtras(template);
+}
+
+function buildConvertersPage(template) {
+  const count =
+    WAV_ROUTES.length +
+    M4A_ROUTES.length +
+    AAC_ROUTES.length +
+    MP3_ROUTES.length +
+    OGG_ROUTES.length +
+    WMA_ROUTES.length;
+  return injectHeadExtras(
+    injectFormatCtas(template).replaceAll('{{CONVERTER_COUNT}}', String(count))
   );
 }
 
 const convertTemplate = fs.readFileSync(convertTemplatePath, 'utf8');
 const homeTemplate = fs.readFileSync(homeTemplatePath, 'utf8');
+const convertersTemplate = fs.readFileSync(convertersTemplatePath, 'utf8');
 
 for (const route of [...WAV_ROUTES, ...M4A_ROUTES, ...AAC_ROUTES, ...MP3_ROUTES, ...OGG_ROUTES, ...WMA_ROUTES]) {
   const outPath = path.join(root, `${route.inputSlug}-to-${route.slug}.html`);
@@ -143,6 +160,9 @@ for (const route of [...WAV_ROUTES, ...M4A_ROUTES, ...AAC_ROUTES, ...MP3_ROUTES,
 
 fs.writeFileSync(path.join(root, 'index.html'), buildHomePage(homeTemplate));
 console.log('Wrote index.html (home)');
+
+fs.writeFileSync(path.join(root, 'converters.html'), buildConvertersPage(convertersTemplate));
+console.log('Wrote converters.html');
 
 const testimonialsTemplate = fs.readFileSync(testimonialsTemplatePath, 'utf8');
 fs.writeFileSync(path.join(root, 'testimonials.html'), injectHeadExtras(testimonialsTemplate));

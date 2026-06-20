@@ -18,6 +18,7 @@
     --text:#f6efe2;--muted:#a89e8c;--faint:#6f675a;
     --signal:#ff6a2b;--signal-2:#ffb13b;--mint:#5ce0b6;--mint-dim:rgba(92,224,182,0.14);
     --amber-dim:rgba(255,106,43,0.13);
+    --drop-bg:rgba(255,236,210,0.065);
     --display:"Bricolage Grotesque",serif;--body:"Hanken Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
     --r:18px;--maxw:1180px;
   }
@@ -83,7 +84,8 @@
     font-family:var(--mono);font-size:12px;color:var(--faint)}
   .hub-top b{color:var(--text);font-size:13px}
   .drop{margin:24px;border:2px dashed var(--line-strong);border-radius:20px;padding:48px 28px;text-align:center;cursor:pointer;
-    transition:border-color .25s,background .25s;background:rgba(255,255,255,0.01)}
+    transition:border-color .25s,background .25s;background:var(--drop-bg);
+    box-shadow:inset 0 1px 0 rgba(255,236,210,0.07)}
   .drop:hover,.drop.drag{border-color:var(--signal);background:var(--amber-dim)}
   .drop.has-files{border-color:var(--mint);background:var(--mint-dim)}
   .drop .ring{width:56px;height:56px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;
@@ -96,21 +98,41 @@
   .drop-hint{margin:0 24px 24px;padding:14px 18px;border-radius:12px;border:1px solid var(--line);background:var(--bg-2);
     font-size:14px;color:var(--muted);text-align:center}
   .drop-hint b{color:var(--mint)}
+  .drop-hint a{color:var(--signal-2);font-weight:600;text-decoration:none}
+  .drop-hint a:hover{text-decoration:underline}
 
-  .format-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:0 24px 28px}
-  @media(max-width:900px){.format-grid{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:520px){.format-grid{grid-template-columns:1fr}}
-  .format-cta{display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:16px;border:1px solid var(--line);
-    background:var(--bg-2);text-decoration:none;color:inherit;transition:.25s;min-height:148px}
-  .format-cta:hover{border-color:var(--signal);transform:translateY(-3px);background:var(--surface)}
-  .format-cta.highlight{border-color:var(--mint);box-shadow:0 0 0 1px var(--mint-dim)}
-  .format-route{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:18px}
-  .format-route .from{color:var(--muted)}.format-route .arrow{color:var(--signal)}.format-route .to{color:var(--text)}
-  .format-cta p{color:var(--muted);font-size:13.5px;line-height:1.45;flex:1}
-  .format-go{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;color:var(--signal-2);font-weight:500}
-  .format-go svg{width:14px;height:14px}
-  .format-group-title{font-family:var(--display);font-weight:700;font-size:15px;color:var(--muted);margin:0 24px 14px;letter-spacing:.02em}
-  .format-group-title:first-of-type{margin-top:0}
+  /* format picker modal */
+  .overlay{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;
+    background:rgba(4,3,2,0.84);backdrop-filter:blur(14px);opacity:0;transition:opacity .3s}
+  .overlay.show{display:flex;opacity:1}
+  .modal{width:100%;max-width:640px;max-height:min(88vh,820px);overflow:auto;background:linear-gradient(180deg,var(--surface-2),var(--bg-2));
+    border:1.5px solid rgba(92,224,182,0.38);border-radius:28px;padding:32px 30px 28px;position:relative;
+    box-shadow:0 0 0 1px rgba(92,224,182,0.1),0 0 90px -18px rgba(92,224,182,0.25),0 60px 120px -40px rgba(0,0,0,0.92),inset 0 1px 0 rgba(255,236,210,0.08);
+    transform:translateY(24px) scale(.96);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  .overlay.show .modal{transform:none}
+  .modal-x{position:absolute;top:18px;right:18px;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);
+    background:var(--bg);color:var(--muted);cursor:pointer;display:grid;place-items:center;transition:.18s;z-index:2}
+  .modal-x:hover{color:var(--text);border-color:var(--line-strong)}
+  .modal-x svg{width:15px;height:15px}
+  .modal h3{font-family:var(--display);font-weight:800;font-size:clamp(26px,4.5vw,32px);letter-spacing:-0.03em;line-height:1.05;
+    background:linear-gradient(105deg,var(--mint),var(--signal-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .modal .msub{color:var(--muted);font-size:15px;margin-top:10px;line-height:1.55}
+  .modal .msub b{color:var(--text);font-weight:600}
+  .picker-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:22px 0 16px}
+  @media(max-width:560px){.picker-grid{grid-template-columns:1fr}}
+  .picker-opt{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:16px;border-radius:14px;
+    border:1px solid var(--line);background:var(--bg);color:inherit;text-align:left;cursor:pointer;transition:.2s;font-family:var(--body)}
+  .picker-opt:hover{border-color:var(--signal);background:var(--surface);transform:translateY(-2px)}
+  .picker-opt:disabled{opacity:.6;cursor:wait;transform:none}
+  .picker-route{display:flex;align-items:center;gap:7px;font-family:var(--display);font-weight:700;font-size:17px}
+  .picker-route .from{color:var(--muted)}.picker-route .arrow{color:var(--signal)}.picker-route .to{color:var(--text)}
+  .picker-blurb{font-size:13px;line-height:1.4;color:var(--muted)}
+  .modal .later{display:block;width:100%;text-align:center;background:none;border:none;color:var(--faint);
+    font-family:var(--body);font-size:13.5px;margin-top:4px;cursor:pointer;transition:.18s}
+  .modal .later:hover{color:var(--muted)}
+  .picker-foot{text-align:center;margin-top:12px;font-size:13px;color:var(--faint)}
+  .picker-foot a{color:var(--signal-2);font-weight:600;text-decoration:none}
+  .picker-foot a:hover{text-decoration:underline}
 
   .trust{display:flex;align-items:center;justify-content:center;gap:34px;flex-wrap:wrap;margin:34px auto 0;
     font-family:var(--mono);font-size:12px;color:var(--faint)}
@@ -166,7 +188,7 @@
       <span></span><span></span><span></span>
     </button>
     <div class="nav-links" id="navMenu">
-      <a href="#formats">Converters</a>
+      <a href="/converters/">Converters</a>
       <a href="#how">How it works</a>
       <a href="/my-files/" id="navFiles" hidden>My files</a>
       <a href="/login/" id="navAccount">Log in</a>
@@ -182,281 +204,17 @@
 
   <div class="hub reveal d4" id="tool">
     <div class="hub-console">
-      <div class="hub-top"><b>Choose your converter</b><span>All major formats · local or server</span></div>
+      <div class="hub-top"><b>Drop your files</b><span>Pick your output format after upload</span></div>
 
       <div class="drop" id="drop">
         <input type="file" id="fileInput" accept=".wav,.wave,.mp3,.m4a,.aac,.ogg,.wma,audio/wav,audio/x-wav,audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/aac,audio/aacp,audio/x-aac,audio/ogg,application/ogg,audio/vorbis,audio/x-ms-wma,audio/wma" multiple hidden>
         <div class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></div>
         <h3 id="dropTitle">Drop your audio files here</h3>
-        <p id="dropSub">or <span class="browse">browse to upload</span> — then pick a converter below</p>
+        <p id="dropSub">or <span class="browse">browse to upload</span> — we'll ask which format you want</p>
         <div class="formats">.WAV · .MP3 · .M4A · .AAC · .OGG · .WMA · UP TO 2GB EACH · BATCH SUPPORTED</div>
       </div>
 
-      <p class="drop-hint" id="dropHint">Pick a converter below to get started — or drop files first, then choose your format.</p>
-
-      <h4 class="format-group-title" id="wav-formats">WAV converters</h4>
-      <div class="format-grid" id="formats-wav" data-input="wav">
-      <a href="/wav-to-mp3/" class="format-cta" data-input="wav">
-      <div class="format-route"><span class="from">WAV</span><span class="arrow">→</span><span class="to">MP3</span></div>
-      <p>Universal playback — the format everything plays.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wav-to-aac/" class="format-cta" data-input="wav">
-      <div class="format-route"><span class="from">WAV</span><span class="arrow">→</span><span class="to">AAC</span></div>
-      <p>Efficient quality for Apple devices and streaming.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wav-to-flac/" class="format-cta" data-input="wav">
-      <div class="format-route"><span class="from">WAV</span><span class="arrow">→</span><span class="to">FLAC</span></div>
-      <p>Lossless compression — archive without compromise.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wav-to-m4a/" class="format-cta" data-input="wav">
-      <div class="format-route"><span class="from">WAV</span><span class="arrow">→</span><span class="to">M4A</span></div>
-      <p>AAC in an MP4 container — native on iPhone and iTunes.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wav-to-m4r/" class="format-cta" data-input="wav">
-      <div class="format-route"><span class="from">WAV</span><span class="arrow">→</span><span class="to">M4R</span></div>
-      <p>Custom iPhone ringtones — trim, fade, and sync.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wav-to-mp4/" class="format-cta" data-input="wav">
-      <div class="format-route"><span class="from">WAV</span><span class="arrow">→</span><span class="to">MP4</span></div>
-      <p>Audio-only MP4 tracks for video editors and platforms.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wav-to-ogg/" class="format-cta" data-input="wav">
-      <div class="format-route"><span class="from">WAV</span><span class="arrow">→</span><span class="to">OGG</span></div>
-      <p>Open Vorbis format for games, Linux, and the web.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wav-to-wma/" class="format-cta" data-input="wav">
-      <div class="format-route"><span class="from">WAV</span><span class="arrow">→</span><span class="to">WMA</span></div>
-      <p>Windows Media Audio for legacy players and workflows.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      </div>
-
-      <h4 class="format-group-title" id="m4a-formats">M4A converters</h4>
-      <div class="format-grid" id="formats-m4a" data-input="m4a">
-      <a href="/m4a-to-aac/" class="format-cta" data-input="m4a">
-      <div class="format-route"><span class="from">M4A</span><span class="arrow">→</span><span class="to">AAC</span></div>
-      <p>Re-encode or extract AAC from your M4A tracks.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/m4a-to-flac/" class="format-cta" data-input="m4a">
-      <div class="format-route"><span class="from">M4A</span><span class="arrow">→</span><span class="to">FLAC</span></div>
-      <p>Archive M4A masters as lossless FLAC.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/m4a-to-m4r/" class="format-cta" data-input="m4a">
-      <div class="format-route"><span class="from">M4A</span><span class="arrow">→</span><span class="to">M4R</span></div>
-      <p>Turn M4A clips into iPhone ringtones.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/m4a-to-mp3/" class="format-cta" data-input="m4a">
-      <div class="format-route"><span class="from">M4A</span><span class="arrow">→</span><span class="to">MP3</span></div>
-      <p>Universal MP3s from your M4A collection.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/m4a-to-mp4/" class="format-cta" data-input="m4a">
-      <div class="format-route"><span class="from">M4A</span><span class="arrow">→</span><span class="to">MP4</span></div>
-      <p>M4A to MP4 audio for video timelines.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/m4a-to-ogg/" class="format-cta" data-input="m4a">
-      <div class="format-route"><span class="from">M4A</span><span class="arrow">→</span><span class="to">OGG</span></div>
-      <p>Open OGG Vorbis from M4A sources.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/m4a-to-wav/" class="format-cta" data-input="m4a">
-      <div class="format-route"><span class="from">M4A</span><span class="arrow">→</span><span class="to">WAV</span></div>
-      <p>Uncompressed WAV from M4A — for editing.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/m4a-to-wma/" class="format-cta" data-input="m4a">
-      <div class="format-route"><span class="from">M4A</span><span class="arrow">→</span><span class="to">WMA</span></div>
-      <p>Windows-friendly WMA from M4A.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      </div>
-
-      <h4 class="format-group-title" id="mp3-formats">MP3 converters</h4>
-      <div class="format-grid" id="formats-mp3" data-input="mp3">
-      <a href="/mp3-to-aac/" class="format-cta" data-input="mp3">
-      <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">AAC</span></div>
-      <p>Efficient AAC from your MP3 library.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/mp3-to-flac/" class="format-cta" data-input="mp3">
-      <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">FLAC</span></div>
-      <p>Archive MP3 masters as FLAC.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/mp3-to-m4r/" class="format-cta" data-input="mp3">
-      <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">M4R</span></div>
-      <p>Turn MP3 clips into iPhone ringtones.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/mp3-to-m4a/" class="format-cta" data-input="mp3">
-      <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">M4A</span></div>
-      <p>MP3 to M4A for Apple ecosystems.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/mp3-to-mp4/" class="format-cta" data-input="mp3">
-      <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">MP4</span></div>
-      <p>MP3 to MP4 audio for video timelines.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/mp3-to-ogg/" class="format-cta" data-input="mp3">
-      <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">OGG</span></div>
-      <p>Open OGG Vorbis from MP3 sources.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/mp3-to-wav/" class="format-cta" data-input="mp3">
-      <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">WAV</span></div>
-      <p>Uncompressed WAV from MP3 — for editing.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/mp3-to-wma/" class="format-cta" data-input="mp3">
-      <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">WMA</span></div>
-      <p>Windows-friendly WMA from MP3.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      </div>
-
-      <h4 class="format-group-title" id="aac-formats">AAC converters</h4>
-      <div class="format-grid" id="formats-aac" data-input="aac">
-      <a href="/aac-to-flac/" class="format-cta" data-input="aac">
-      <div class="format-route"><span class="from">AAC</span><span class="arrow">→</span><span class="to">FLAC</span></div>
-      <p>Archive AAC masters as lossless FLAC.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/aac-to-m4r/" class="format-cta" data-input="aac">
-      <div class="format-route"><span class="from">AAC</span><span class="arrow">→</span><span class="to">M4R</span></div>
-      <p>Turn AAC clips into iPhone ringtones.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/aac-to-mp3/" class="format-cta" data-input="aac">
-      <div class="format-route"><span class="from">AAC</span><span class="arrow">→</span><span class="to">MP3</span></div>
-      <p>Universal MP3s from your AAC library.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/aac-to-mp4/" class="format-cta" data-input="aac">
-      <div class="format-route"><span class="from">AAC</span><span class="arrow">→</span><span class="to">MP4</span></div>
-      <p>AAC to MP4 audio for video timelines.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/aac-to-m4a/" class="format-cta" data-input="aac">
-      <div class="format-route"><span class="from">AAC</span><span class="arrow">→</span><span class="to">M4A</span></div>
-      <p>Wrap AAC in an M4A container for Apple.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/aac-to-ogg/" class="format-cta" data-input="aac">
-      <div class="format-route"><span class="from">AAC</span><span class="arrow">→</span><span class="to">OGG</span></div>
-      <p>Open OGG Vorbis from AAC sources.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/aac-to-wav/" class="format-cta" data-input="aac">
-      <div class="format-route"><span class="from">AAC</span><span class="arrow">→</span><span class="to">WAV</span></div>
-      <p>Uncompressed WAV from AAC — for editing.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/aac-to-wma/" class="format-cta" data-input="aac">
-      <div class="format-route"><span class="from">AAC</span><span class="arrow">→</span><span class="to">WMA</span></div>
-      <p>Windows-friendly WMA from AAC.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      </div>
-
-      <h4 class="format-group-title" id="ogg-formats">OGG converters</h4>
-      <div class="format-grid" id="formats-ogg" data-input="ogg">
-      <a href="/ogg-to-aac/" class="format-cta" data-input="ogg">
-      <div class="format-route"><span class="from">OGG</span><span class="arrow">→</span><span class="to">AAC</span></div>
-      <p>AAC from your OGG Vorbis library.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/ogg-to-flac/" class="format-cta" data-input="ogg">
-      <div class="format-route"><span class="from">OGG</span><span class="arrow">→</span><span class="to">FLAC</span></div>
-      <p>Archive OGG masters as FLAC.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/ogg-to-m4r/" class="format-cta" data-input="ogg">
-      <div class="format-route"><span class="from">OGG</span><span class="arrow">→</span><span class="to">M4R</span></div>
-      <p>Turn OGG clips into iPhone ringtones.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/ogg-to-mp3/" class="format-cta" data-input="ogg">
-      <div class="format-route"><span class="from">OGG</span><span class="arrow">→</span><span class="to">MP3</span></div>
-      <p>Universal MP3s from your OGG collection.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/ogg-to-m4a/" class="format-cta" data-input="ogg">
-      <div class="format-route"><span class="from">OGG</span><span class="arrow">→</span><span class="to">M4A</span></div>
-      <p>OGG to M4A for Apple ecosystems.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/ogg-to-mp4/" class="format-cta" data-input="ogg">
-      <div class="format-route"><span class="from">OGG</span><span class="arrow">→</span><span class="to">MP4</span></div>
-      <p>OGG to MP4 audio for video timelines.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/ogg-to-wav/" class="format-cta" data-input="ogg">
-      <div class="format-route"><span class="from">OGG</span><span class="arrow">→</span><span class="to">WAV</span></div>
-      <p>Uncompressed WAV from OGG — for editing.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/ogg-to-wma/" class="format-cta" data-input="ogg">
-      <div class="format-route"><span class="from">OGG</span><span class="arrow">→</span><span class="to">WMA</span></div>
-      <p>Windows-friendly WMA from OGG.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      </div>
-
-      <h4 class="format-group-title" id="wma-formats">WMA converters</h4>
-      <div class="format-grid" id="formats-wma" data-input="wma">
-      <a href="/wma-to-aac/" class="format-cta" data-input="wma">
-      <div class="format-route"><span class="from">WMA</span><span class="arrow">→</span><span class="to">AAC</span></div>
-      <p>AAC from your WMA library.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wma-to-flac/" class="format-cta" data-input="wma">
-      <div class="format-route"><span class="from">WMA</span><span class="arrow">→</span><span class="to">FLAC</span></div>
-      <p>Archive WMA files as FLAC.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wma-to-m4r/" class="format-cta" data-input="wma">
-      <div class="format-route"><span class="from">WMA</span><span class="arrow">→</span><span class="to">M4R</span></div>
-      <p>Turn WMA clips into iPhone ringtones.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wma-to-mp3/" class="format-cta" data-input="wma">
-      <div class="format-route"><span class="from">WMA</span><span class="arrow">→</span><span class="to">MP3</span></div>
-      <p>Universal MP3s from your WMA collection.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wma-to-m4a/" class="format-cta" data-input="wma">
-      <div class="format-route"><span class="from">WMA</span><span class="arrow">→</span><span class="to">M4A</span></div>
-      <p>WMA to M4A for Apple ecosystems.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wma-to-mp4/" class="format-cta" data-input="wma">
-      <div class="format-route"><span class="from">WMA</span><span class="arrow">→</span><span class="to">MP4</span></div>
-      <p>WMA to MP4 audio for video timelines.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wma-to-ogg/" class="format-cta" data-input="wma">
-      <div class="format-route"><span class="from">WMA</span><span class="arrow">→</span><span class="to">OGG</span></div>
-      <p>Open OGG Vorbis from WMA sources.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      <a href="/wma-to-wav/" class="format-cta" data-input="wma">
-      <div class="format-route"><span class="from">WMA</span><span class="arrow">→</span><span class="to">WAV</span></div>
-      <p>Uncompressed WAV from WMA — for editing.</p>
-      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </a>
-      </div>
+      <p class="drop-hint" id="dropHint">Drop files above to convert — or <a href="/converters/">browse all converters</a>.</p>
     </div>
   </div>
 
@@ -496,17 +254,28 @@
         <div class="brand"><span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>YouConvert<span class="io">.com</span></div>
         <p>Fast, private audio conversion — in your browser or on our servers.</p>
       </div>
-      <div class="foot-col"><h5>WAV</h5><a href="/wav-to-mp3/">WAV to MP3</a><a href="/wav-to-aac/">WAV to AAC</a><a href="/wav-to-flac/">WAV to FLAC</a><a href="/wav-to-m4a/">WAV to M4A</a><a href="#wav-formats">All WAV converters</a></div>
-      <div class="foot-col"><h5>M4A</h5><a href="/m4a-to-mp3/">M4A to MP3</a><a href="/m4a-to-aac/">M4A to AAC</a><a href="/m4a-to-wav/">M4A to WAV</a><a href="/m4a-to-flac/">M4A to FLAC</a><a href="#m4a-formats">All M4A converters</a></div>
-      <div class="foot-col"><h5>MP3</h5><a href="/mp3-to-aac/">MP3 to AAC</a><a href="/mp3-to-wav/">MP3 to WAV</a><a href="/mp3-to-flac/">MP3 to FLAC</a><a href="/mp3-to-m4a/">MP3 to M4A</a><a href="#mp3-formats">All MP3 converters</a></div>
-      <div class="foot-col"><h5>AAC</h5><a href="/aac-to-mp3/">AAC to MP3</a><a href="/aac-to-m4a/">AAC to M4A</a><a href="/aac-to-wav/">AAC to WAV</a><a href="#aac-formats">All AAC converters</a></div>
-      <div class="foot-col"><h5>OGG</h5><a href="/ogg-to-mp3/">OGG to MP3</a><a href="/ogg-to-wav/">OGG to WAV</a><a href="/ogg-to-aac/">OGG to AAC</a><a href="#ogg-formats">All OGG converters</a></div>
-      <div class="foot-col foot-wma"><h5>WMA</h5><a href="/wma-to-mp3/">WMA to MP3</a><a href="/wma-to-wav/">WMA to WAV</a><a href="/wma-to-aac/">WMA to AAC</a><a href="#wma-formats">All WMA converters</a></div>
-      <div class="foot-col foot-company"><h5>Company</h5><a href="/testimonials/">Testimonials</a><a href="/my-files/">My files</a><a href="/account/">Account</a><a href="/login/">Log in</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div>
+      <div class="foot-col"><h5>WAV</h5><a href="/wav-to-mp3/">WAV to MP3</a><a href="/wav-to-aac/">WAV to AAC</a><a href="/wav-to-flac/">WAV to FLAC</a><a href="/wav-to-m4a/">WAV to M4A</a><a href="/converters/#wav-formats">All WAV converters</a></div>
+      <div class="foot-col"><h5>M4A</h5><a href="/m4a-to-mp3/">M4A to MP3</a><a href="/m4a-to-aac/">M4A to AAC</a><a href="/m4a-to-wav/">M4A to WAV</a><a href="/m4a-to-flac/">M4A to FLAC</a><a href="/converters/#m4a-formats">All M4A converters</a></div>
+      <div class="foot-col"><h5>MP3</h5><a href="/mp3-to-aac/">MP3 to AAC</a><a href="/mp3-to-wav/">MP3 to WAV</a><a href="/mp3-to-flac/">MP3 to FLAC</a><a href="/mp3-to-m4a/">MP3 to M4A</a><a href="/converters/#mp3-formats">All MP3 converters</a></div>
+      <div class="foot-col"><h5>AAC</h5><a href="/aac-to-mp3/">AAC to MP3</a><a href="/aac-to-m4a/">AAC to M4A</a><a href="/aac-to-wav/">AAC to WAV</a><a href="/converters/#aac-formats">All AAC converters</a></div>
+      <div class="foot-col"><h5>OGG</h5><a href="/ogg-to-mp3/">OGG to MP3</a><a href="/ogg-to-wav/">OGG to WAV</a><a href="/ogg-to-aac/">OGG to AAC</a><a href="/converters/#ogg-formats">All OGG converters</a></div>
+      <div class="foot-col foot-wma"><h5>WMA</h5><a href="/wma-to-mp3/">WMA to MP3</a><a href="/wma-to-wav/">WMA to WAV</a><a href="/wma-to-aac/">WMA to AAC</a><a href="/converters/#wma-formats">All WMA converters</a></div>
+      <div class="foot-col foot-company"><h5>Company</h5><a href="/converters/">All converters</a><a href="/testimonials/">Testimonials</a><a href="/my-files/">My files</a><a href="/account/">Account</a><a href="/login/">Log in</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div>
     </div>
     <div class="foot-bot"><span>© 2026 YouConvert.com</span></div>
   </div>
 </footer>
+
+<div class="overlay" id="pickerOverlay" onclick="if(event.target===this)closePicker()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+    <button class="modal-x" type="button" onclick="closePicker()" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <h3 id="pickerTitle">Convert to…</h3>
+    <p class="msub" id="pickerSub">Pick your output format.</p>
+    <div class="picker-grid" id="pickerGrid"></div>
+    <button class="later" type="button" onclick="closePicker()">Cancel</button>
+    <p class="picker-foot"><a href="/converters/">Browse all converters</a></p>
+  </div>
+</div>
 
 <script type="module" src="/public/nav.js"></script>
 <script type="module" src="/public/home.js"></script>

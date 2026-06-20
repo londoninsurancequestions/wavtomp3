@@ -90,11 +90,12 @@ export async function hasPendingCheckout() {
   return !!(data?.items?.length || data?.returnTo);
 }
 
-export async function savePendingFiles(files, inputSlug = 'wav') {
+export async function savePendingFiles(files, inputSlug = 'wav', { outputSlug = null } = {}) {
   if (!files?.length) return false;
 
   const payload = {
     inputSlug,
+    outputSlug,
     files: [...files].map((f) => ({
       name: f.name,
       type: f.type || 'audio/wav',
@@ -131,7 +132,7 @@ export async function loadPendingFiles() {
   const files = data.files.map(
     (f) => new File([f.blob], f.name, { type: f.type, lastModified: f.lastModified })
   );
-  return { files, inputSlug: data.inputSlug || 'wav' };
+  return { files, inputSlug: data.inputSlug || 'wav', outputSlug: data.outputSlug || null };
 }
 
 export async function clearPendingFiles() {
