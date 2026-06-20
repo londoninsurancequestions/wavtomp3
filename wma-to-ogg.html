@@ -332,12 +332,38 @@
     box-shadow:0 10px 28px -12px rgba(92,224,182,0.65)}
   .dl-unlocked:hover{background:#6eecc4;transform:translateY(-1px);box-shadow:0 14px 32px -12px rgba(92,224,182,0.75)}
   .dl-unlocked svg{width:17px;height:17px}
+  .dl-unlocked.is-downloaded{background:rgba(92,224,182,0.14);color:var(--mint);border-color:rgba(92,224,182,0.35);
+    box-shadow:none;cursor:default;pointer-events:none}
+  .dl-unlocked.is-downloaded:hover{background:rgba(92,224,182,0.14);transform:none;box-shadow:none}
   .btn-clear{display:inline-flex;align-items:center;justify-content:center;gap:7px;
     background:var(--bg);color:var(--muted);border:1px solid var(--line);font-family:var(--body);
     font-weight:600;font-size:14px;padding:13px 18px;border-radius:11px;cursor:pointer;transition:.2s;white-space:nowrap}
   .btn-clear:hover{border-color:var(--line-strong);color:var(--text)}
   .btn-clear.subtle{font-size:13px;padding:13px 16px;color:var(--faint)}
   .btn-clear.subtle:hover{color:var(--muted)}
+
+  /* ---------- saved library panel ---------- */
+  .library-section{margin:56px auto 0;padding:0 28px;max-width:var(--maxw)}
+  .library-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+  .library-head h2{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,34px);letter-spacing:-0.03em}
+  .library-head p{color:var(--muted);font-size:14.5px;margin-top:6px;max-width:52ch}
+  .library-viewall{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--signal-2);text-decoration:none;white-space:nowrap}
+  .library-viewall:hover{text-decoration:underline}
+  .library-loading,.library-empty,.library-guest p{color:var(--muted);font-size:14px;line-height:1.55}
+  .library-guest{padding:18px 20px;border:1px dashed var(--line-strong);border-radius:16px;background:rgba(255,255,255,0.02)}
+  .library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  @media(max-width:900px){.library-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:560px){.library-grid{grid-template-columns:1fr}}
+  .library-card{display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);min-height:148px}
+  .library-card-name{font-weight:700;font-size:14.5px;line-height:1.35;word-break:break-word}
+  .library-card-meta{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:4px;line-height:1.4}
+  .library-card-foot{display:flex;justify-content:space-between;gap:10px;margin-top:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .library-card-dl{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;padding:11px 14px;border-radius:10px;
+    background:var(--mint);color:#0b2a20;border:1px solid var(--mint);font-weight:700;font-size:13.5px;text-decoration:none;transition:.2s}
+  .library-card-dl:hover{background:#6eecc4;transform:translateY(-1px)}
+  .library-card-dl svg{width:15px;height:15px}
+  .library-card-dl.is-downloaded{background:rgba(92,224,182,0.14);color:var(--mint);border-color:rgba(92,224,182,0.35);
+    transform:none;pointer-events:none}
 
   /* ---------- unlock modal ---------- */
   .overlay{position:fixed;inset:0;z-index:200;display:none;align-items:flex-start;justify-content:center;padding:20px;
@@ -629,7 +655,7 @@
       <a href="#options">Options</a>
       <a href="#uses">Use cases</a>
       <a href="#faq">FAQ</a>
-      <a href="/my-files/" id="navFiles" hidden>My files</a>
+      <a href="/login/?next=/my-files/" id="navFiles">My files</a>
       <a href="/login/" id="navAccount">Log in</a>
       <a href="#converter" class="pill pill-desktop"><span class="dot"></span>Private by default</a>
     </div>
@@ -943,6 +969,20 @@
         <a href="/wma-to-ogg/" class="current">WMA to OGG</a>
         <a href="/wma-to-wav/">WMA to WAV</a>
   </div>
+</section>
+
+<!-- YOUR LIBRARY -->
+<section class="library-section wrap" id="librarySection" hidden>
+  <div class="library-head">
+    <div>
+      <div class="kicker">Your library</div>
+      <h2>Saved conversions</h2>
+      <p>Every full export you convert while logged in is saved here — download again anytime.</p>
+    </div>
+    <a href="/my-files/" class="library-viewall">View all files →</a>
+  </div>
+  <div id="libraryGuest" hidden></div>
+  <div id="libraryRecent"></div>
 </section>
 
 <!-- FAQ -->

@@ -1,6 +1,7 @@
 import { fetchMe } from '/public/auth.js';
 import { savePendingFiles } from '/public/session-store.js';
 import { getInputFormat, assignInputFormat, getRoutes } from '/public/conversion-formats.js';
+import { refreshLibraryPanel } from '/public/library-ui.js';
 
 const drop = document.getElementById('drop');
 const input = document.getElementById('fileInput');
@@ -148,8 +149,22 @@ async function updateNavAuth() {
   if (data?.user) {
     navAccount.textContent = 'Account';
     navAccount.href = '/account/';
-    if (navFiles) navFiles.hidden = false;
+    if (navFiles) {
+      navFiles.hidden = false;
+      navFiles.href = '/my-files/';
+    }
+  } else if (navFiles) {
+    navFiles.hidden = false;
+    navFiles.href = '/login/?next=' + encodeURIComponent('/my-files/');
   }
+
+  await refreshLibraryPanel({
+    section: document.getElementById('librarySection'),
+    list: document.getElementById('libraryRecent'),
+    guest: document.getElementById('libraryGuest'),
+    limit: 3,
+    isLoggedIn: !!data?.user,
+  });
 }
 
 updateNavAuth();

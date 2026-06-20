@@ -34,39 +34,33 @@ function shouldShowPromo() {
   return !state.subscriptionActive && !state.freeTier?.unlimited;
 }
 
-function isQuotaExhausted() {
+function stopTicking() {
+  if (!tickTimer) return;
+  clearInterval(tickTimer);
+  tickTimer = null;
+}
+
+function shouldShowFreeTierUi() {
   return shouldShowPromo() && (state.freeTier?.remaining ?? 0) <= 0;
 }
 
+function isQuotaExhausted() {
+  return shouldShowFreeTierUi();
+}
+
 function bannerCopy() {
-  const remaining = state.freeTier?.remaining ?? 0;
   const limit = state.freeTier?.limit ?? 5;
-  if (isQuotaExhausted()) {
-    return {
-      eyebrow: 'Daily free limit reached',
-      sub: `until your ${limit} free conversions return`,
-    };
-  }
-  const leftLabel = remaining === 1 ? '1 free conversion left' : `${remaining} free conversions left`;
   return {
-    eyebrow: leftLabel,
-    sub: 'until free slots reset · unlock for unlimited access',
+    eyebrow: 'Daily free limit reached',
+    sub: `until your ${limit} free conversions return`,
   };
 }
 
 function modalCopy() {
   const limit = state.freeTier?.limit ?? 5;
-  if (isQuotaExhausted()) {
-    return {
-      label: 'Your free conversions return in',
-      sub: `You've used all ${limit} free full exports for today. Unlock now for unlimited conversions — no waiting.`,
-    };
-  }
-  const remaining = state.freeTier?.remaining ?? 0;
-  const leftLabel = remaining === 1 ? '1 free conversion left' : `${remaining} free conversions left`;
   return {
-    label: `${leftLabel} · resets in`,
-    sub: 'Skip the wait — unlock unlimited full-length exports right now.',
+    label: 'Your free conversions return in',
+    sub: `You've used all ${limit} free full exports for today. Unlock now for unlimited conversions — no waiting.`,
   };
 }
 
@@ -85,7 +79,7 @@ function updateBanner() {
   const banner = document.getElementById('freeTierBanner');
   if (!banner) return;
 
-  if (!shouldShowPromo()) {
+  if (!shouldShowFreeTierUi()) {
     banner.hidden = true;
     document.body.classList.remove('has-free-tier-banner');
     syncBannerHeight();
@@ -111,7 +105,7 @@ function updateModalUrgency() {
   const modal = document.querySelector('.modal-unlock');
   if (!block) return;
 
-  if (!shouldShowPromo() || !document.getElementById('overlay')?.classList.contains('show')) {
+  if (!shouldShowFreeTierUi() || !document.getElementById('overlay')?.classList.contains('show')) {
     block.hidden = true;
     modal?.classList.remove('has-urgency');
     return;
@@ -134,6 +128,7 @@ function updateModalUrgency() {
 }
 
 function tick() {
+  if (!shouldShowFreeTierUi()) return;
   const ms = resetTargetMs() - Date.now();
   setTimerText(document.getElementById('freeTierBannerTimer'), ms);
   setTimerText(document.getElementById('modalUrgencyTimer'), ms);
@@ -150,7 +145,8 @@ function applyState(freeTier, subscriptionActive) {
   state.subscriptionActive = !!subscriptionActive;
   updateBanner();
   updateModalUrgency();
-  if (shouldShowPromo()) startTicking();
+  if (shouldShowFreeTierUi()) startTicking();
+  else stopTicking();
 }
 
 async function fetchStatus() {
@@ -251,5 +247,6 @@ if (overlay) {
 bindCtas();
 window.addEventListener('resize', syncBannerHeight);
 fetchStatus().then(() => {
-  if (shouldShowPromo()) startTicking();
+  if (shouldShowFreeTierUi()) startTicking();
+  else stopTicking();
 });

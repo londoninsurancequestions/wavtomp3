@@ -54,9 +54,7 @@ function freeTierHintHtml() {
   if (freeTier.remaining <= 0) {
     return ` · <span class="free-tier-hint exhausted">Daily free limit reached — preview-only until tomorrow</span>`;
   }
-  const n = freeTier.remaining;
-  const label = n === 1 ? '1 free full conversion' : `${n} free full conversions`;
-  return ` · <span class="free-tier-hint">${label} left today</span>`;
+  return '';
 }
 
 async function refreshFreeTier() {
@@ -544,6 +542,7 @@ function pushFileToStore(f) {
     audio: null,
     outputName: inputFormat.stripExt(f.name) + '.' + outputFormat.ext,
     outputSize: 0,
+    downloaded: false,
   };
   fileStore.push(item);
   parseInputFile(f, (info) => {
@@ -752,6 +751,21 @@ function buildWave(seed) {
   return out;
 }
 
+function markFileDownloaded(index) {
+  const item = fileStore[index];
+  if (!item || item.downloaded) return;
+  item.downloaded = true;
+
+  const card = filesEl.querySelector(`.result-card[data-i="${index}"]`);
+  const link = card?.querySelector('[data-full-dl]');
+  if (!link) return;
+
+  const done = document.createElement('span');
+  done.className = 'dl-unlocked is-downloaded';
+  done.innerHTML = `${SVG_DONE} Downloaded`;
+  link.replaceWith(done);
+}
+
 function renderFiles() {
   const br = currentBitrate();
   const mode2 = document.querySelector('#mode2 .chip.on')?.textContent || 'CBR';
@@ -820,7 +834,10 @@ function renderFiles() {
           <div class="rc-actions">
           ${
             item.unlocked
-              ? `<a class="dl-unlocked" href="${item.url}" download="${item.outputName}">${SVG_DL} Download ${outputFormat.label}</a>
+              ? item.downloaded
+                ? `<span class="dl-unlocked is-downloaded">${SVG_DONE} Downloaded</span>
+                 <button class="btn-clear" data-clear="${i}">Clear from list</button>`
+                : `<a class="dl-unlocked" href="${item.url}" download="${item.outputName}" data-full-dl="${i}">${SVG_DL} Download ${outputFormat.label}</a>
                  <button class="btn-clear" data-clear="${i}">Clear from list</button>`
               : `<button class="btn-unlock" data-unlock="${i}">${SVG_DL} Download ${outputFormat.label}</button>
                  <button class="btn-clear subtle" data-clear="${i}">Remove</button>`
@@ -839,6 +856,7 @@ function renderFiles() {
 
       card.querySelector('[data-play]')?.addEventListener('click', () => togglePreview(i));
       card.querySelector('[data-preview-dl]')?.addEventListener('click', () => downloadPreviewClip(i));
+      card.querySelector('[data-full-dl]')?.addEventListener('click', () => markFileDownloaded(i));
       card.querySelectorAll('[data-unlock]').forEach((btn) =>
         btn.addEventListener('click', () => openUnlockModal(i))
       );
@@ -872,7 +890,7 @@ function updateSummary() {
     if (locked > 0) {
       const lockNote = freeTierExhausted()
         ? `${unlocked > 0 ? `${unlocked} unlocked · ` : ''}<b>${locked} preview-only</b> — daily free limit reached`
-        : `<b>unlock unlimited conversions</b> to export ${locked > 1 ? 'all files' : 'the full file'}`;
+        : `<b>${locked} preview-only</b>`;
       sum.innerHTML = `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''} converted.</b> ${lockNote}.`;
     } else {
       sum.innerHTML = `<b>All unlocked.</b> Convert and export as much as you need.`;
@@ -1276,7 +1294,7 @@ async function logConversionAnalytics(item, mode) {
 }
 
 async function saveConversionToLibrary(item, mode) {
-  if (!currentUser || !subscriptionActive || !item.blob || item.libraryId) return;
+  if (!currentUser || !item.unlocked || !item.blob || item.libraryId) return;
 
   try {
     const form = new FormData();
@@ -1302,6 +1320,7 @@ async function saveConversionToLibrary(item, mode) {
     if (res.ok) {
       const data = await res.json();
       item.libraryId = data.id;
+      refreshLibrarySection();
     }
   } catch (err) {
     console.warn('Could not save to library:', err);
@@ -1472,7 +1491,7 @@ function refreshActionButton() {
 }
 
 window.downloadAll = function downloadAll() {
-  fileStore.forEach((it) => {
+  fileStore.forEach((it, i) => {
     if (!it.url || !it.unlocked) return;
     const a = document.createElement('a');
     a.href = it.url;
@@ -1480,6 +1499,7 @@ window.downloadAll = function downloadAll() {
     document.body.appendChild(a);
     a.click();
     a.remove();
+    markFileDownloaded(i);
   });
 };
 
@@ -1497,7 +1517,27 @@ function unlockAll() {
   });
   renderFiles();
   updateNavAuth();
-  saveAllToLibrary();
+  void saveAllToLibrary().then(() => refreshLibrarySection());
+}
+
+import {
+  refreshLibraryPanel,
+} from '/public/library-ui.js';
+
+async function refreshLibrarySection() {
+  const section = document.getElementById('librarySection');
+  const list = document.getElementById('libraryRecent');
+  const guest = document.getElementById('libraryGuest');
+  if (!section) return;
+
+  const data = await fetchAuthState();
+  await refreshLibraryPanel({
+    section,
+    list,
+    guest,
+    limit: 6,
+    isLoggedIn: !!data?.user,
+  });
 }
 
 async function fetchAuthState() {
@@ -1520,12 +1560,19 @@ function updateNavAuth() {
     if (data?.user) {
       link.textContent = 'Account';
       link.href = '/account/';
-      if (filesLink) filesLink.hidden = false;
+      if (filesLink) {
+        filesLink.hidden = false;
+        filesLink.href = '/my-files/';
+      }
     } else {
       link.textContent = 'Log in';
       link.href = '/login/';
-      if (filesLink) filesLink.hidden = true;
+      if (filesLink) {
+        filesLink.hidden = false;
+        filesLink.href = '/login/?next=' + encodeURIComponent('/my-files/');
+      }
     }
+    refreshLibrarySection();
   });
 }
 
@@ -1602,6 +1649,7 @@ async function restorePendingSession() {
       blob: item.blob,
       state: 'converted',
       unlocked: subscriptionActive,
+      downloaded: false,
       audio: null,
       outputName: item.outputName,
       outputSize: item.outputSize,

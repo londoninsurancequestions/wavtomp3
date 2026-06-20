@@ -1,4 +1,5 @@
 import { requireAuth, formatDateTime, formatBytes } from '/public/auth.js';
+import { renderLibraryEmpty, wireDownloadState } from '/public/library-ui.js';
 
 const SVG_DL =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>';
@@ -42,9 +43,7 @@ function updateBatchBar(container) {
     downloadBtn.innerHTML =
       selected.length > 1
         ? `${SVG_DL} Download ${selected.length} files as ZIP`
-        : selected.length === 1
-          ? `${SVG_DL} Download selected`
-          : `${SVG_DL} Download selected`;
+        : `${SVG_DL} Download selected`;
   }
 
   if (countEl) {
@@ -76,7 +75,7 @@ async function batchDownload(container) {
   if (!ids.length) return;
 
   const btn = container.querySelector('#batchDownload');
-  const label = btn?.textContent;
+  const label = btn?.innerHTML;
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'Preparing ZIP…';
@@ -119,8 +118,7 @@ function renderFiles(container, files) {
   allFiles = files;
 
   if (!files.length) {
-    container.innerHTML =
-      '<p class="empty">No saved conversions yet. Convert a WAV while logged in and your files will appear here.</p>';
+    renderLibraryEmpty(container);
     return;
   }
 
@@ -171,7 +169,7 @@ function renderFiles(container, files) {
             <td class="inv-actions">
               ${
                 file.available
-                  ? `<a class="btn-dl" href="/api/files/${file.id}/download">${SVG_DL} Download</a>`
+                  ? `<a class="btn-dl" href="/api/files/${file.id}/download" data-library-dl>${SVG_DL} Download</a>`
                   : ''
               }
               <button class="btn-del" data-delete="${file.id}" type="button">Delete</button>
@@ -187,6 +185,7 @@ function renderFiles(container, files) {
   });
 
   wireBatchControls(container);
+  wireDownloadState(container);
   updateBatchBar(container);
 }
 

@@ -612,7 +612,8 @@ app.post('/api/files', requireAuth, libraryUpload.single('file'), async (req, re
 
   try {
     const dir = userUploadDir(req.userId);
-    const filename = `${crypto.randomUUID()}.mp3`;
+    const ext = path.extname(outputName) || '.bin';
+    const filename = `${crypto.randomUUID()}${ext}`;
     const filePath = path.join(dir, filename);
     fs.writeFileSync(filePath, req.file.buffer);
 

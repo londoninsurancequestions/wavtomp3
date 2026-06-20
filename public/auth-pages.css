@@ -112,6 +112,7 @@ h1{font-family:var(--display);font-weight:800;font-size:clamp(32px,5vw,44px);let
   color:var(--signal-2);padding:7px 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg);text-decoration:none}
 .btn-dl:hover{border-color:var(--signal);text-decoration:none}
 .btn-dl svg{width:14px;height:14px}
+.btn-dl.is-downloaded{color:var(--mint);border-color:rgba(92,224,182,0.35);background:var(--mint-dim);pointer-events:none}
 .empty{color:var(--muted);font-size:14px;padding:20px 0}
 .files-table .file-name{font-weight:600;font-size:14.5px}
 .files-table .file-sub{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:3px}

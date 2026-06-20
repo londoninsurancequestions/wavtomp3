@@ -9,7 +9,9 @@ async function updateNavAuth() {
   if (data?.user) {
     navAccount.textContent = 'Account';
     navAccount.href = '/account/';
-    if (navFiles) navFiles.hidden = false;
+    if (navFiles) navFiles.href = '/my-files/';
+  } else if (navFiles) {
+    navFiles.href = '/login/?next=' + encodeURIComponent('/my-files/');
   }
 }
 
