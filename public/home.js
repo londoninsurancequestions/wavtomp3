@@ -104,7 +104,7 @@ function handleFiles(list) {
 
   if (buckets.length === 0) {
     dropHint.innerHTML =
-      '<b>Unsupported file type.</b> We support WAV, MP3, M4A, AAC, OGG, and WMA.';
+      '<b>Unsupported file type.</b> We support WAV, MP3, M4A, MP4, AAC, OGG, and WMA.';
     return;
   }
 

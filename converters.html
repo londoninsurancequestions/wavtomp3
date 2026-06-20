@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
 
 <title>All audio converters — YouConvert.com</title>
-<meta name="description" content="Browse every YouConvert audio converter — WAV, MP3, M4A, AAC, OGG, and WMA to any major format. Convert in your browser or on our servers.">
+<meta name="description" content="Browse every YouConvert audio converter — WAV, MP3, M4A, MP4, AAC, OGG, and WMA to any major format. Convert in your browser or on our servers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -117,6 +117,8 @@
     })
 </script>
 
+<link rel="stylesheet" href="/public/free-tier-banner.css">
+<script type="module" src="/public/free-tier-ui.js"></script>
 </head>
 <body>
 
@@ -137,6 +139,17 @@
     </div>
   </div>
 </nav>
+<div id="freeTierBanner" class="free-tier-banner" hidden>
+  <div class="wrap free-tier-banner-in">
+    <div class="free-tier-banner-copy">
+      <span class="free-tier-banner-eyebrow" id="freeTierBannerEyebrow">Daily free limit reached</span>
+      <span class="free-tier-banner-timer" id="freeTierBannerTimer" aria-live="polite">00:00:00</span>
+      <span class="free-tier-banner-sub" id="freeTierBannerSub">until your free conversions return</span>
+    </div>
+    <button type="button" class="free-tier-banner-cta" id="freeTierBannerCta">Unlock Now</button>
+  </div>
+</div>
+
 
 <header class="hero wrap">
   <span class="eyebrow">Every format we support</span>
@@ -146,7 +159,7 @@
 
 <div class="catalog" id="formats">
   <div class="catalog-in">
-    <div class="catalog-top"><b>48 converters</b><span>AAC · M4A · MP3 · OGG · WAV · WMA</span></div>
+    <div class="catalog-top"><b>57 converters</b><span>AAC · M4A · MP3 · MP4 · OGG · WAV · WMA</span></div>
     <div class="catalog-body">
       <h2 class="format-group-title" id="aac-formats">AAC converters</h2>
       <div class="format-grid" id="formats-aac" data-input="aac">
@@ -276,6 +289,55 @@
       <a href="/mp3-to-wma/" class="format-cta" data-input="mp3">
       <div class="format-route"><span class="from">MP3</span><span class="arrow">→</span><span class="to">WMA</span></div>
       <p>Windows-friendly WMA from MP3.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      </div>
+
+      <h2 class="format-group-title" id="mp4-formats">MP4 converters</h2>
+      <div class="format-grid" id="formats-mp4" data-input="mp4">
+      <a href="/mp4-to-aac/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">AAC</span></div>
+      <p>Extract or re-encode AAC from MP4 video or audio.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      <a href="/mp4-to-flac/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">FLAC</span></div>
+      <p>Lossless FLAC from MP4 audio tracks.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      <a href="/mp4-to-m4a/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">M4A</span></div>
+      <p>MP4 to M4A — Apple-friendly audio exports.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      <a href="/mp4-to-m4r/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">M4R</span></div>
+      <p>Turn MP4 clips into iPhone ringtones.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      <a href="/mp4-to-mp3/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">MP3</span></div>
+      <p>Universal MP3s extracted from MP4 video or audio.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      <a href="/mp4-to-mp4/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">MP4</span></div>
+      <p>Audio-only MP4 tracks from video files.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      <a href="/mp4-to-ogg/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">OGG</span></div>
+      <p>Open OGG Vorbis from MP4 sources.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      <a href="/mp4-to-wav/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">WAV</span></div>
+      <p>Uncompressed WAV from MP4 — for editing.</p>
+      <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+      <a href="/mp4-to-wma/" class="format-cta" data-input="mp4">
+      <div class="format-route"><span class="from">MP4</span><span class="arrow">→</span><span class="to">WMA</span></div>
+      <p>Windows-friendly WMA from MP4.</p>
       <span class="format-go">Convert <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </a>
       </div>

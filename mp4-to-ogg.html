@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-input-format="wav" data-output-format="aac">
+<html lang="en" data-input-format="mp4" data-output-format="ogg">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/public/apple-touch-icon.png">
 
-<title>YouConvert.com — Convert WAV to AAC, in your browser or on our servers</title>
+<title>YouConvert.com — Convert MP4 to OGG, in your browser or on our servers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -649,8 +649,8 @@
 
 <!-- HERO -->
 <header class="hero wrap">
-  <span class="eyebrow reveal d1">⎯⎯ WAV → AAC ⎯⎯</span>
-  <h1 class="reveal d2">Convert WAV to AAC<br><span class="grad">smaller files, still great quality.</span></h1>
+  <span class="eyebrow reveal d1">⎯⎯ MP4 → OGG ⎯⎯</span>
+  <h1 class="reveal d2">Convert MP4 to OGG<br><span class="grad">royalty-free output.</span></h1>
   <p class="sub reveal d3">Drop a file and it's converted <b>right in your browser</b> — nothing leaves your device. Need to crunch huge batches? Flip one switch and let <b>our servers</b> do the heavy lifting.</p>
 
   <!-- CONVERTER CONSOLE -->
@@ -683,11 +683,11 @@
       <div class="upload-step" id="uploadStep">
       <!-- dropzone -->
       <div class="drop" id="drop">
-        <input type="file" id="fileInput" accept=".wav,audio/wav,audio/x-wav" multiple hidden>
+        <input type="file" id="fileInput" accept=".mp4,video/mp4,audio/mp4" multiple hidden>
         <div class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg></div>
-        <h3>Drop your WAV files here</h3>
+        <h3>Drop your MP4 files here</h3>
         <p>or <span class="browse">browse to upload</span> — drag a whole folder if you like</p>
-        <div class="formats">.WAV · .WAVE · UP TO 2GB EACH · BATCH SUPPORTED</div>
+        <div class="formats">.MP4 · VIDEO OR AUDIO · UP TO 2GB EACH · BATCH SUPPORTED</div>
       </div>
 
       <!-- file list -->
@@ -802,7 +802,7 @@
 
       <!-- convert -->
       <div class="convert-bar">
-        <div class="summary" id="summary"><b>No files yet</b> — drop WAV files above to get started.</div>
+        <div class="summary" id="summary"><b>No files yet</b> — drop MP4 files above to get started.</div>
         <button class="btn-go" id="goBtn" disabled onclick="convert()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg>
           Convert
@@ -930,18 +930,19 @@
 <section class="block wrap" id="formats">
   <div class="sec-head center">
     <div class="kicker">More converters</div>
-    <h2>Other WAV conversions</h2>
+    <h2>Other MP4 conversions</h2>
     <p>Need a different output format? Pick one below — same converter, same privacy options.</p>
   </div>
   <div class="format-links">
-        <a href="/wav-to-aac/" class="current">WAV to AAC</a>
-        <a href="/wav-to-flac/">WAV to FLAC</a>
-        <a href="/wav-to-m4a/">WAV to M4A</a>
-        <a href="/wav-to-m4r/">WAV to M4R</a>
-        <a href="/wav-to-mp3/">WAV to MP3</a>
-        <a href="/wav-to-mp4/">WAV to MP4</a>
-        <a href="/wav-to-ogg/">WAV to OGG</a>
-        <a href="/wav-to-wma/">WAV to WMA</a>
+        <a href="/mp4-to-aac/">MP4 to AAC</a>
+        <a href="/mp4-to-flac/">MP4 to FLAC</a>
+        <a href="/mp4-to-m4a/">MP4 to M4A</a>
+        <a href="/mp4-to-m4r/">MP4 to M4R</a>
+        <a href="/mp4-to-mp3/">MP4 to MP3</a>
+        <a href="/mp4-to-mp4/">MP4 to MP4</a>
+        <a href="/mp4-to-ogg/" class="current">MP4 to OGG</a>
+        <a href="/mp4-to-wav/">MP4 to WAV</a>
+        <a href="/mp4-to-wma/">MP4 to WMA</a>
   </div>
 </section>
 
@@ -953,9 +954,9 @@
   </div>
   <div class="faq">
     <details class="q" open><summary>Is my audio really private in local mode?<span class="plus">+</span></summary><div class="a">Yes. In local mode the conversion happens entirely inside your browser. Your files are read from disk into memory, encoded, and handed straight back to you as a download — they never touch a network connection or a server.</div></details>
-    <details class="q"><summary>What bitrate should I pick?<span class="plus">+</span></summary><div class="a">AAC is more efficient than MP3 at the same bitrate. <code>256k</code> is excellent for music; <code>128k</code> works well for most listening.</div></details>
+    <details class="q"><summary>What bitrate should I pick?<span class="plus">+</span></summary><div class="a">Vorbis at <code>192k–256k</code> suits music; lower bitrates work for speech.</div></details>
     <details class="q"><summary>When should I use server mode instead?<span class="plus">+</span></summary><div class="a">Server mode shines for large batches (dozens or hundreds of files), very long recordings, or low-powered devices like phones and tablets. The encoding runs on dedicated workers, and your uploads are deleted automatically once you've downloaded the results.</div></details>
-    <details class="q"><summary>Can I convert more than one file at a time?<span class="plus">+</span></summary><div class="a">Absolutely — drag in as many WAV files as you like, or drop a whole folder. Your chosen options apply to the entire batch, and you can download everything as a single zip.</div></details>
+    <details class="q"><summary>Can I convert more than one file at a time?<span class="plus">+</span></summary><div class="a">Absolutely — drag in as many MP4 files as you like, or drop a whole folder. Your chosen options apply to the entire batch, and you can download everything as a single zip.</div></details>
     <details class="q"><summary>Does it keep my metadata and cover art?<span class="plus">+</span></summary><div class="a">By default we carry over existing ID3 tags and embedded artwork. You can also overwrite the title and artist, or attach new cover art, on the way out.</div></details>
   </div>
 </section>
@@ -964,7 +965,7 @@
 <div class="cta">
   <div class="cta-in">
     <h2>Drop a file. Done in seconds.</h2>
-    <p>No account, no upload by default, no nonsense. Clean AAC files, ready to share.</p>
+    <p>No account, no upload by default, no nonsense. OGG files from your MP4 library.</p>
     <a href="#converter" class="btn-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Start converting</a>
   </div>
 </div>
@@ -975,9 +976,9 @@
     <div class="foot-grid">
       <div>
         <div class="brand"><span class="logo-mark"><i></i><i></i><i></i><i></i><i></i></span>YouConvert<span class="io">.com</span></div>
-        <p>Convert WAV to AAC locally in your browser or on our servers — ideal for Apple devices and streaming.</p>
+        <p>Convert MP4 to OGG for games, Linux apps, and open-source projects that prefer Vorbis.</p>
       </div>
-      <div class="foot-col"><h5>Product</h5><a href="#converter">Converter</a><a href="#formats">WAV conversions</a><a href="/converters/">All converters</a><a href="/testimonials/">Testimonials</a><a href="#how">Local vs server</a></div>
+      <div class="foot-col"><h5>Product</h5><a href="#converter">Converter</a><a href="#formats">MP4 conversions</a><a href="/converters/">All converters</a><a href="/testimonials/">Testimonials</a><a href="#how">Local vs server</a></div>
       <div class="foot-col"><h5>Company</h5><a href="#faq">FAQ</a><a href="/my-files/">My files</a><a href="/account/">Account</a><a href="/login/">Log in</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div>
     </div>
     <div class="foot-bot">

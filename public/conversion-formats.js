@@ -17,14 +17,30 @@ export const INPUT_M4A = {
   slug: 'm4a',
   label: 'M4A',
   ext: 'm4a',
-  accept: '.m4a,audio/mp4,audio/x-m4a',
+  accept: '.m4a,audio/x-m4a',
   dropTitle: 'Drop your M4A files here',
   formatsHint: '.M4A · UP TO 2GB EACH · BATCH SUPPORTED',
   matches(file) {
-    return /\.m4a$/i.test(file.name) || /m4a|audio\/mp4/i.test(file.type);
+    return /\.m4a$/i.test(file.name) || /audio\/x-m4a/i.test(file.type);
   },
   stripExt(name) {
     return name.replace(/\.m4a$/i, '');
+  },
+};
+
+export const INPUT_MP4 = {
+  slug: 'mp4',
+  label: 'MP4',
+  ext: 'mp4',
+  accept: '.mp4,video/mp4,audio/mp4',
+  dropTitle: 'Drop your MP4 files here',
+  formatsHint: '.MP4 · VIDEO OR AUDIO · UP TO 2GB EACH · BATCH SUPPORTED',
+  stripVideo: true,
+  matches(file) {
+    return /\.mp4$/i.test(file.name) || /video\/mp4/i.test(file.type);
+  },
+  stripExt(name) {
+    return name.replace(/\.mp4$/i, '');
   },
 };
 
@@ -92,6 +108,7 @@ export const INPUT_WMA = {
 const INPUT_FORMATS = {
   wav: INPUT_WAV,
   m4a: INPUT_M4A,
+  mp4: INPUT_MP4,
   aac: INPUT_AAC,
   mp3: INPUT_MP3,
   ogg: INPUT_OGG,
@@ -101,6 +118,7 @@ const INPUT_FORMATS = {
 export const INPUT_DETECTORS = [
   INPUT_WAV,
   INPUT_MP3,
+  INPUT_MP4,
   INPUT_M4A,
   INPUT_AAC,
   INPUT_OGG,
@@ -540,6 +558,81 @@ const m4aCopy = {
   },
 };
 
+const mp4Copy = {
+  aac: {
+    homeBlurb: 'Extract or re-encode AAC from MP4 video or audio.',
+    tagline: 'lean audio from video.',
+    footerBlurb: 'Pull AAC from MP4 files — great for streaming, editing, and stripping audio from video clips.',
+    ctaText: 'Clean AAC exports from your MP4 files.',
+    faqBitrate:
+      'AAC is efficient at <code>256k</code> for music and <code>128k</code> for speech. Re-encoding lossy sources cannot improve quality.',
+  },
+  flac: {
+    homeBlurb: 'Lossless FLAC from MP4 audio tracks.',
+    tagline: 'lossless archives from MP4.',
+    footerBlurb: 'Decode MP4 audio to FLAC for editing — note this cannot restore quality lost in the original encode.',
+    ctaText: 'Lossless FLAC from your MP4 files.',
+    faqBitrate:
+      'FLAC is lossless. Converting from lossy MP4 audio cannot restore data removed in the original encode.',
+  },
+  m4r: {
+    homeBlurb: 'Turn MP4 clips into iPhone ringtones.',
+    tagline: 'ringtones, ready to sync.',
+    footerBlurb: 'Convert MP4 to M4R for iPhone — trim to the hook, fade the edges, and sync via Finder or iTunes.',
+    ctaText: 'M4R ringtones from MP4 sources.',
+    faqBitrate:
+      'Ringtones are short — <code>192k–256k</code> is plenty. Use trim and fade for a polished loop.',
+  },
+  mp3: {
+    homeBlurb: 'Universal MP3s extracted from MP4 video or audio.',
+    tagline: 'plays everywhere.',
+    footerBlurb: 'Convert MP4 to MP3 for maximum device compatibility — extract audio from video in your browser or on our servers.',
+    ctaText: 'MP3 files from your MP4 library.',
+    faqBitrate:
+      'For music, <code>256k–320k</code> is a safe target. For voice, <code>128k mono</code> keeps files small.',
+  },
+  m4a: {
+    homeBlurb: 'MP4 to M4A — Apple-friendly audio exports.',
+    tagline: 'iTunes & iPhone ready.',
+    footerBlurb: 'Convert MP4 to M4A for iTunes, iPhone, and anywhere AAC-in-MP4 is the native format.',
+    ctaText: 'M4A files from your MP4 sources.',
+    faqBitrate:
+      'M4A uses AAC audio. <code>256k</code> is a safe choice for music; <code>128k</code> is fine for voice.',
+  },
+  mp4: {
+    homeBlurb: 'Audio-only MP4 tracks from video files.',
+    tagline: 'strip video, keep the audio.',
+    footerBlurb: 'Export audio-only MP4 from video MP4s for editors, social platforms, and podcast workflows.',
+    ctaText: 'Audio-only MP4 tracks from your video files.',
+    faqBitrate:
+      '<code>192k–256k</code> AAC in MP4 is standard. Video is stripped — only the audio track is kept.',
+  },
+  ogg: {
+    homeBlurb: 'Open OGG Vorbis from MP4 sources.',
+    tagline: 'royalty-free output.',
+    footerBlurb: 'Convert MP4 to OGG for games, Linux apps, and open-source projects that prefer Vorbis.',
+    ctaText: 'OGG files from your MP4 library.',
+    faqBitrate:
+      'Vorbis at <code>192k–256k</code> suits music; lower bitrates work for speech.',
+  },
+  wav: {
+    homeBlurb: 'Uncompressed WAV from MP4 — for editing.',
+    tagline: 'PCM audio, ready to edit.',
+    footerBlurb: 'Extract MP4 audio to WAV for DAWs, sample editors, and anywhere uncompressed PCM is required.',
+    ctaText: 'Full WAV exports from MP4.',
+    faqBitrate:
+      'WAV is uncompressed PCM — there is no bitrate setting. File size reflects duration, sample rate, and channels.',
+  },
+  wma: {
+    homeBlurb: 'Windows-friendly WMA from MP4.',
+    tagline: 'legacy Windows formats.',
+    footerBlurb: 'Convert MP4 to WMA for older Windows players and enterprise workflows via our servers.',
+    ctaText: 'WMA exports when you need them.',
+    faqBitrate:
+      '<code>192k</code> is a solid default for music; <code>128k</code> for voice.',
+  },
+};
+
 const OUTPUT_SPECS = {
   mp3: { label: 'MP3', ext: 'mp3', mime: 'audio/mpeg', codec: 'libmp3lame', zamzar: 'mp3', lossless: false, localSupported: true },
   aac: { label: 'AAC', ext: 'aac', mime: 'audio/aac', codec: 'aac', zamzar: 'aac', lossless: false, localSupported: true },
@@ -594,9 +687,16 @@ export const WMA_ROUTES = buildRoutes(
   wmaCopy
 );
 
+export const MP4_ROUTES = buildRoutes(
+  'mp4',
+  ['aac', 'flac', 'm4r', 'mp3', 'm4a', 'mp4', 'ogg', 'wav', 'wma'],
+  mp4Copy
+);
+
 const ROUTES_BY_INPUT = {
   wav: WAV_ROUTES,
   m4a: M4A_ROUTES,
+  mp4: MP4_ROUTES,
   aac: AAC_ROUTES,
   mp3: MP3_ROUTES,
   ogg: OGG_ROUTES,

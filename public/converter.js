@@ -27,7 +27,9 @@ const outputFormat = getRoute(inputSlug, outputSlug);
 let conversionMode = null;
 let fileStore = [];
 let converted = false;
-let selectedPlan = 'monthly';
+let selectedPlan = 'unlock';
+
+const UNLOCK_PRICE_LINE = '$9.99 · unlimited conversions';
 let unlockTarget = null;
 let activePreview = null;
 let ffmpeg = null;
@@ -35,14 +37,98 @@ let ffmpegLoading = false;
 let ffmpegReady = false;
 let subscriptionActive = false;
 let currentUser = null;
+let freeTier = {
+  unlimited: false,
+  limit: 5,
+  used: 0,
+  remaining: 5,
+  resetsAt: null,
+};
+
+function freeTierExhausted() {
+  return !subscriptionActive && !freeTier.unlimited && freeTier.remaining <= 0;
+}
+
+function freeTierHintHtml() {
+  if (subscriptionActive || freeTier.unlimited) return '';
+  if (freeTier.remaining <= 0) {
+    return ` · <span class="free-tier-hint exhausted">Daily free limit reached — preview-only until tomorrow</span>`;
+  }
+  const n = freeTier.remaining;
+  const label = n === 1 ? '1 free full conversion' : `${n} free full conversions`;
+  return ` · <span class="free-tier-hint">${label} left today</span>`;
+}
+
+async function refreshFreeTier() {
+  try {
+    const res = await fetch('/api/free-tier', { credentials: 'include' });
+    if (res.ok) {
+      freeTier = await res.json();
+      dispatchFreeTierUpdate();
+    }
+  } catch {
+    // best-effort
+  }
+}
+
+function dispatchFreeTierUpdate() {
+  document.dispatchEvent(
+    new CustomEvent('free-tier-update', {
+      detail: { freeTier, subscriptionActive, selectedPlan },
+    })
+  );
+}
+
+window.hasLockedConversions = function hasLockedConversions() {
+  return fileStore.some((f) => f.state === 'converted' && !f.unlocked);
+};
+
+async function consumeFreeTierSlot() {
+  if (subscriptionActive || freeTier.unlimited) return true;
+  try {
+    const res = await fetch('/api/free-tier/consume', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ count: 1 }),
+    });
+    const data = await res.json();
+    if (data.limit != null) {
+      freeTier = {
+        unlimited: !!data.unlimited,
+        limit: data.limit,
+        used: data.used,
+        remaining: data.remaining,
+        resetsAt: data.resetsAt,
+      };
+      dispatchFreeTierUpdate();
+    }
+    return res.ok && data.consumed > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function finalizeItemUnlock(item) {
+  if (subscriptionActive) {
+    item.unlocked = true;
+    return;
+  }
+  item.unlocked = await consumeFreeTierSlot();
+}
 
 const PREVIEW_DOWNLOAD_SECONDS = 10;
 const PREVIEW_PLAY_SECONDS = 30;
 
 const PLANS = {
-  monthly: { cta: 'Unlock Now' },
-  annual: { cta: 'Unlock Now' },
+  unlock: { cta: 'Unlock Now', priceLine: UNLOCK_PRICE_LINE },
 };
+
+function updateUnlockPriceLabels() {
+  const line = PLANS.unlock.priceLine;
+  const heroPrice = document.getElementById('modalUrgencyPrice');
+  if (heroPrice) heroPrice.textContent = line;
+}
 
 const SVG_PREVIEW_HEAD =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="20" cy="16" r="3"/></svg>';
@@ -538,7 +624,7 @@ function showUnsupportedModal(files) {
       ? `<b>${escapeHtml(files[0].name)}</b>`
       : `<b>${files.length} files</b>`;
   showFormatNoticeModal(
-    `Unfortunately this file type isn't presently supported. ${fileRef} couldn't be added.<p class="modal-supported">We support WAV, MP3, M4A, AAC, OGG, and WMA.</p>`,
+    `Unfortunately this file type isn't presently supported. ${fileRef} couldn't be added.<p class="modal-supported">We support WAV, MP3, M4A, MP4, AAC, OGG, and WMA.</p>`,
     { title: 'Unsupported file type' }
   );
 }
@@ -743,9 +829,11 @@ function renderFiles() {
           ${
             item.unlocked
               ? ''
-              : '<p class="result-download-note">Listen free, or download a ' +
-                PREVIEW_DOWNLOAD_SECONDS +
-                '-second preview above. Unlock to export the full file without limits.</p>'
+              : '<p class="result-download-note">' +
+                (freeTierExhausted()
+                  ? `You've used your ${freeTier.limit} free conversions for today. Listen or download a ${PREVIEW_DOWNLOAD_SECONDS}-second preview above, or unlock for unlimited exports.`
+                  : `Listen free, or download a ${PREVIEW_DOWNLOAD_SECONDS}-second preview above. Unlock to export the full file without limits.`) +
+                '</p>'
           }
         </div>`;
 
@@ -780,20 +868,25 @@ function updateSummary() {
 
   if (converted) {
     const locked = fileStore.filter((f) => !f.unlocked).length;
-    sum.innerHTML =
-      locked > 0
-        ? `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''} converted.</b> Preview free · <b>unlock unlimited conversions</b> to export.`
-        : `<b>All unlocked.</b> Convert and export as much as you need.`;
+    const unlocked = fileStore.length - locked;
+    if (locked > 0) {
+      const lockNote = freeTierExhausted()
+        ? `${unlocked > 0 ? `${unlocked} unlocked · ` : ''}<b>${locked} preview-only</b> — daily free limit reached`
+        : `<b>unlock unlimited conversions</b> to export ${locked > 1 ? 'all files' : 'the full file'}`;
+      sum.innerHTML = `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''} converted.</b> ${lockNote}.`;
+    } else {
+      sum.innerHTML = `<b>All unlocked.</b> Convert and export as much as you need.`;
+    }
   } else if (conversionMode === 'server') {
     const totalIn = fileStore.reduce((a, f) => a + f.file.size, 0);
-    sum.innerHTML = `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''}</b> · server mode · ${fmtBytes(totalIn)} → ${outputFormat.label}`;
+    sum.innerHTML = `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''}</b> · server mode · ${fmtBytes(totalIn)} → ${outputFormat.label}${freeTierHintHtml()}`;
   } else {
     const totalIn = fileStore.reduce((a, f) => a + f.file.size, 0);
     const totalDur = fileStore.reduce((a, f) => a + (f.duration || 0), 0);
     const totalOut = (br * 1000 / 8) * totalDur;
     const saved =
       totalIn > totalOut && totalOut ? Math.round((1 - totalOut / totalIn) * 100) : 0;
-    sum.innerHTML = `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''}</b> · ${br}k ${mode2} · ${ch} · ${fmtBytes(totalIn)} → ${totalOut ? '≈ ' + fmtBytes(totalOut) : '—'}${saved ? ' · save ~' + saved + '%' : ''}`;
+    sum.innerHTML = `<b>${fileStore.length} file${fileStore.length > 1 ? 's' : ''}</b> · ${br}k ${mode2} · ${ch} · ${fmtBytes(totalIn)} → ${totalOut ? '≈ ' + fmtBytes(totalOut) : '—'}${saved ? ' · save ~' + saved + '%' : ''}${freeTierHintHtml()}`;
   }
   refreshActionButton();
 }
@@ -859,15 +952,23 @@ async function getPreviewClipBlob(item) {
   }
 }
 
-window.downloadPreviewClip = async function downloadPreviewClip(i) {
+window.downloadPreviewClip = async function downloadPreviewClip(i, externalBtn = null) {
   const item = fileStore[i];
   if (!item?.blob) return;
 
-  const btn = document.querySelector(`[data-preview-dl="${i}"]`);
-  const defaultLabel = `${SVG_DL} Download preview`;
+  const btn = externalBtn || document.querySelector(`[data-preview-dl="${i}"]`);
+  const isModalBtn = btn?.id === 'modalPreviewBtn';
+  const modalLabel = isModalBtn ? btn.querySelector('#modalPreviewLabel') : null;
+  const defaultCardLabel = `${SVG_DL} Download preview`;
+  const defaultModalText = modalLabel?.dataset.defaultText || modalLabel?.textContent || '';
+
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = 'Preparing preview…';
+    if (isModalBtn && modalLabel) {
+      modalLabel.textContent = 'Preparing preview…';
+    } else if (!isModalBtn) {
+      btn.innerHTML = 'Preparing preview…';
+    }
   }
 
   try {
@@ -883,18 +984,83 @@ window.downloadPreviewClip = async function downloadPreviewClip(i) {
   } catch (err) {
     console.error('Preview download failed:', err);
     if (btn) {
-      btn.innerHTML = 'Preview download failed — try again';
       btn.disabled = false;
-      setTimeout(() => {
-        btn.innerHTML = defaultLabel;
-      }, 2500);
+      if (isModalBtn && modalLabel) {
+        modalLabel.textContent = 'Preview failed — try again';
+        setTimeout(() => {
+          modalLabel.textContent = defaultModalText;
+        }, 2500);
+      } else if (!isModalBtn) {
+        btn.innerHTML = 'Preview download failed — try again';
+        setTimeout(() => {
+          btn.innerHTML = defaultCardLabel;
+        }, 2500);
+      }
     }
-    return;
+    throw err;
   }
 
   if (btn) {
     btn.disabled = false;
-    btn.innerHTML = defaultLabel;
+    if (isModalBtn && modalLabel) {
+      modalLabel.textContent = defaultModalText;
+    } else if (!isModalBtn) {
+      btn.innerHTML = defaultCardLabel;
+    }
+  }
+};
+
+function modalPreviewIndices() {
+  if (typeof unlockTarget === 'number') return [unlockTarget];
+  return unlockIndices();
+}
+
+function modalPreviewLabel(count = 1) {
+  if (count === 1) return `Download ${PREVIEW_DOWNLOAD_SECONDS}s preview`;
+  return `Download ${PREVIEW_DOWNLOAD_SECONDS}s previews (${count} files)`;
+}
+
+function updateModalPreviewButton() {
+  const btn = document.getElementById('modalPreviewBtn');
+  if (!btn) return;
+
+  const indices = modalPreviewIndices().filter((i) => fileStore[i]?.blob);
+  const label = document.getElementById('modalPreviewLabel');
+  btn.hidden = indices.length === 0;
+  if (label) {
+    label.textContent = modalPreviewLabel(indices.length);
+    label.dataset.defaultText = label.textContent;
+  }
+  btn.disabled = false;
+}
+
+window.downloadModalPreview = async function downloadModalPreview() {
+  const indices = modalPreviewIndices().filter((i) => fileStore[i]?.blob);
+  if (!indices.length) return;
+
+  const btn = document.getElementById('modalPreviewBtn');
+  const label = document.getElementById('modalPreviewLabel');
+  const defaultText = label?.dataset.defaultText || modalPreviewLabel(indices.length);
+
+  if (btn) btn.disabled = true;
+
+  try {
+    for (let n = 0; n < indices.length; n++) {
+      if (label && indices.length > 1) {
+        label.textContent = `Preparing preview ${n + 1} of ${indices.length}…`;
+      }
+      await downloadPreviewClip(indices[n], indices.length === 1 ? btn : null);
+      if (n < indices.length - 1) {
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    }
+  } catch {
+    return;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      if (label) label.textContent = defaultText;
+    }
   }
 };
 
@@ -953,7 +1119,7 @@ function buildFfmpegArgs(opts, duration) {
   if (opts.channels === 'Mono') args.push('-ac', '1');
   else args.push('-ac', '2');
 
-  if (outputFormat.audioOnly) args.push('-vn');
+  if (outputFormat.audioOnly || inputFormat.stripVideo) args.push('-vn');
 
   if (outputFormat.isPcm) {
     args.push('-codec:a', 'pcm_s16le');
@@ -1082,7 +1248,7 @@ function setItemConverted(item, blob) {
   item.outputSize = blob.size;
   item.state = 'converted';
   item.previewClipBlob = null;
-  item.unlocked = subscriptionActive;
+  item.unlocked = false;
   if (item.audio) {
     item.audio.pause();
     item.audio = null;
@@ -1183,6 +1349,7 @@ window.convert = async function convert() {
         blob = await convertServer(item, fileProgress);
       }
       setItemConverted(item, blob);
+      await finalizeItemUnlock(item);
       await saveConversionToLibrary(item, conversionMode);
       await logConversionAnalytics(item, conversionMode);
     }
@@ -1323,6 +1490,8 @@ function isSubscribed() {
 
 function unlockAll() {
   subscriptionActive = true;
+  freeTier = { ...freeTier, unlimited: true };
+  dispatchFreeTierUpdate();
   fileStore.forEach((it) => {
     it.unlocked = true;
   });
@@ -1365,11 +1534,10 @@ function unlockIndices() {
 }
 
 window.selectPlan = function selectPlan(plan) {
-  selectedPlan = plan;
-  document.querySelectorAll('#plans .plan').forEach((p) =>
-    p.classList.toggle('selected', p.dataset.plan === plan)
-  );
-  document.getElementById('payLabel').textContent = PLANS[plan].cta;
+  selectedPlan = 'unlock';
+  updateUnlockPriceLabels();
+  dispatchFreeTierUpdate();
+  window.refreshUnlockModalUrgency?.();
 };
 
 window.openUnlockModal = function openUnlockModal(target) {
@@ -1377,16 +1545,32 @@ window.openUnlockModal = function openUnlockModal(target) {
   if (unlockIndices().length === 0) return;
 
   const lockedCount = unlockIndices().length;
-  document.getElementById('modalSub').innerHTML =
-    `You've heard the <b>30-second preview</b>. Go Pro to unlock <b>unlimited conversions</b>${lockedCount > 1 ? ' for all your files' : ''} — full-length exports, every option, local or server.`;
-  document.getElementById('getBox').innerHTML = `
-    <div class="gi">${SVG_CHECK} Unlimited conversions — local &amp; server</div>
+  const quotaExhausted = freeTierExhausted();
+  const titleEl = document.getElementById('modalTitle');
+  if (titleEl) {
+    titleEl.textContent = quotaExhausted
+      ? 'Daily free limit reached'
+      : 'Unlock unlimited conversions';
+  }
+
+  document.getElementById('modalSub').innerHTML = quotaExhausted
+    ? `You've used your <b>${freeTier.limit} free conversions</b> for today. Your files are still available as <b>${PREVIEW_PLAY_SECONDS}-second previews</b>${lockedCount > 1 ? ` (${lockedCount} files locked)` : ''}. Unlock for unlimited full-length exports — your free allocation resets tomorrow.`
+    : `You've heard the <b>30-second preview</b>. Go Pro to unlock <b>unlimited conversions</b>${lockedCount > 1 ? ' for all your files' : ''} — full-length exports, every option, local or server.`;
+  document.getElementById('getBox').innerHTML = quotaExhausted
+    ? `<div class="gi">${SVG_CHECK} Unlimited conversions — no daily cap</div>
+    <div class="gi">${SVG_CHECK} Full-length exports — no 30-second cap</div>
+    <div class="gi">${SVG_CHECK} Every bitrate, VBR &amp; processing option</div>
+    <div class="gi">${SVG_CHECK} Free allocation resets every day at midnight UTC</div>`
+    : `<div class="gi">${SVG_CHECK} Unlimited conversions — local &amp; server</div>
     <div class="gi">${SVG_CHECK} Full-length exports — no 30-second cap</div>
     <div class="gi">${SVG_CHECK} Every bitrate, VBR &amp; processing option</div>
     <div class="gi">${SVG_CHECK} Batch convert with no watermark</div>`;
-  selectPlan(selectedPlan);
+  updateUnlockPriceLabels();
+  updateModalPreviewButton();
   document.getElementById('redirecting').classList.remove('show');
   document.getElementById('overlay').classList.add('show');
+  window.refreshUnlockModalUrgency?.();
+  dispatchFreeTierUpdate();
 };
 
 window.closeModal = function closeModal() {
@@ -1445,7 +1629,7 @@ window.goToStripeCheckout = async function goToStripeCheckout() {
     const res = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan: selectedPlan, returnTo }),
+      body: JSON.stringify({ returnTo }),
     });
 
     if (!res.ok) {
@@ -1464,7 +1648,7 @@ window.goToStripeCheckout = async function goToStripeCheckout() {
     redirecting.classList.remove('show');
     alert(
       err.message +
-        '\n\nIf Stripe is not configured yet, set STRIPE_SECRET_KEY and price IDs in your .env file.'
+        '\n\nIf Stripe is not configured yet, set STRIPE_SECRET_KEY and STRIPE_PRICE_UNLOCK in your .env file.'
     );
   }
 };
@@ -1473,11 +1657,15 @@ async function checkSubscriptionOnLoad() {
   const data = await fetchAuthState();
   if (!data) {
     currentUser = null;
+    await refreshFreeTier();
     return;
   }
 
   currentUser = data.user || null;
   subscriptionActive = !!data.subscriptionActive;
+  if (data.freeTier) freeTier = data.freeTier;
+  else if (!subscriptionActive) await refreshFreeTier();
+  else dispatchFreeTierUpdate();
   if (subscriptionActive) {
     fileStore.forEach((it) => {
       it.unlocked = true;
@@ -1584,6 +1772,7 @@ async function loadStagedHomeFiles() {
 
 async function init() {
   document.getElementById('modalTestimonials')?.insertAdjacentHTML('beforeend', modalTestimonialsHtml());
+  updateUnlockPriceLabels();
   configureFormatUI();
   applyPreset('music');
   await loadStagedHomeFiles();

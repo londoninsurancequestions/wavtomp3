@@ -18,6 +18,7 @@ import {
   updateUserStripeCustomerId,
   markCheckoutSessionUsed,
   isCheckoutSessionUsed,
+  markUserUnlocked,
   countUsers,
 } from './lib/db.js';
 import {
@@ -31,8 +32,8 @@ import {
 } from './lib/auth.js';
 import { sealJobId, sealFileId, openJobToken, openFileToken } from './lib/convert-tokens.js';
 import {
-  hasActiveSubscription,
-  getSubscriptionSummary,
+  hasPaidAccess,
+  getAccessSummary,
   resolveUserStripeContext,
   cancelSubscriptionAtPeriodEnd,
   cancelSubscriptionImmediately,
@@ -63,6 +64,11 @@ import {
   deleteUserAccount,
 } from './lib/admin.js';
 import { initStore, getHealthInfo } from './lib/store.js';
+import {
+  consumeFreeTier,
+  getFreeTierStatus,
+  resolveFreeTierIdentity,
+} from './lib/free-tier.js';
 import { convertPdfToEpub } from './lib/ebook-convert.js';
 import { cleanUrlMiddleware } from './lib/clean-urls.js';
 import { pagePath } from './lib/page-paths.js';
@@ -154,6 +160,18 @@ async function loadUserSubscription(user) {
   }
 }
 
+function authUserIdFromRequest(req) {
+  const token = req.cookies?.wavtomp3_token;
+  if (!token) return null;
+  const payload = verifyToken(token);
+  return payload?.sub ?? null;
+}
+
+async function loadFreeTierForRequest(req, res, { userId = null, subscriptionActive = false } = {}) {
+  const identityKey = resolveFreeTierIdentity(req, res, userId);
+  return getFreeTierStatus(identityKey, { unlimited: subscriptionActive });
+}
+
 /* ---------- Stripe webhook needs raw body ---------- */
 app.post(
   '/api/webhook',
@@ -238,6 +256,7 @@ app.post('/api/auth/register', async (req, res) => {
 
   try {
     let customerId = null;
+    let checkoutLifetime = false;
 
     if (sessionId) {
       if (await isCheckoutSessionUsed(sessionId)) {
@@ -250,19 +269,20 @@ app.post('/api/auth/register', async (req, res) => {
       }
 
       if (await findUserByStripeCustomerId(checkout.customerId)) {
-        return res.status(409).json({ error: 'This subscription is already linked to an account. Try logging in.' });
+        return res.status(409).json({ error: 'This purchase is already linked to an account. Try logging in.' });
       }
 
       customerId = checkout.customerId;
+      checkoutLifetime = !!checkout.lifetime;
     } else {
       const match = await findStripeCustomerByEmail(stripe, normalizedEmail);
       if (!match) {
         return res.status(400).json({
-          error: 'No active subscription found for this email. Complete checkout first, or use the link from your payment confirmation.',
+          error: 'No unlock purchase found for this email. Complete checkout first, or use the link from your payment confirmation.',
         });
       }
       if (await findUserByStripeCustomerId(match.customerId)) {
-        return res.status(409).json({ error: 'This subscription is already linked to an account. Try logging in.' });
+        return res.status(409).json({ error: 'This purchase is already linked to an account. Try logging in.' });
       }
       customerId = match.customerId;
     }
@@ -272,6 +292,10 @@ app.post('/api/auth/register', async (req, res) => {
 
     if (sessionId) {
       await markCheckoutSessionUsed(sessionId, user.id);
+      if (checkoutLifetime) await markUserUnlocked(user.id);
+    } else {
+      const access = await getAccessSummary(stripe, customerId);
+      if (access?.lifetime) await markUserUnlocked(user.id);
     }
 
     const token = signToken(user);
@@ -302,7 +326,7 @@ app.post('/api/auth/login', async (req, res) => {
         if (match && !(await findUserByStripeCustomerId(match.customerId))) {
           return res.status(401).json({
             error:
-              'No account exists for this email yet, but you have an active subscription. Create your account using the same email you paid with.',
+              'No account exists for this email yet, but you have an active unlock. Create your account using the same email you paid with.',
             needsRegistration: true,
           });
         }
@@ -351,7 +375,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
       if (match && !(await findUserByStripeCustomerId(match.customerId))) {
         return res.status(404).json({
           error:
-            'No account exists for this email yet, but you have an active subscription. Create your account using the same email you paid with.',
+            'No account exists for this email yet, but you have an active unlock. Create your account using the same email you paid with.',
           needsRegistration: true,
         });
       }
@@ -364,8 +388,10 @@ app.post('/api/auth/reset-password', async (req, res) => {
   try {
     let subscriptionActive = false;
 
-    if (user.stripe_customer_id) {
-      subscriptionActive = await hasActiveSubscription(stripe, user.stripe_customer_id);
+    if (user.unlocked_at) {
+      subscriptionActive = true;
+    } else if (user.stripe_customer_id) {
+      subscriptionActive = await hasPaidAccess(stripe, user.stripe_customer_id);
     }
     if (!subscriptionActive) {
       const match = await findStripeCustomerByEmail(stripe, normalizedEmail);
@@ -374,7 +400,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
     if (!subscriptionActive) {
       return res.status(403).json({
-        error: 'No active subscription found for this email. Reset is only available for active subscribers.',
+        error: 'No active unlock found for this email. Reset is only available for paying customers.',
       });
     }
 
@@ -417,12 +443,75 @@ app.get('/api/auth/me', async (req, res) => {
   }
 
   const { subscription } = await loadUserSubscription(user);
+  const subscriptionActive = subscription?.active ?? false;
+  const freeTier = await loadFreeTierForRequest(req, res, {
+    userId: user.id,
+    subscriptionActive,
+  });
 
   res.json({
     user: publicUser(user),
-    subscriptionActive: subscription?.active ?? false,
+    subscriptionActive,
     subscription,
+    freeTier,
   });
+});
+
+app.get('/api/free-tier', async (req, res) => {
+  try {
+    const userId = authUserIdFromRequest(req);
+    let subscriptionActive = false;
+
+    if (userId) {
+      const user = await findUserById(userId);
+      if (user) {
+        const { subscription } = await loadUserSubscription(user);
+        subscriptionActive = subscription?.active ?? false;
+      }
+    }
+
+    const freeTier = await loadFreeTierForRequest(req, res, { userId, subscriptionActive });
+    res.json(freeTier);
+  } catch (err) {
+    console.error('Free tier status error:', err);
+    res.status(500).json({ error: 'Failed to load free tier status' });
+  }
+});
+
+app.post('/api/free-tier/consume', async (req, res) => {
+  try {
+    const userId = authUserIdFromRequest(req);
+    let subscriptionActive = false;
+
+    if (userId) {
+      const user = await findUserById(userId);
+      if (user) {
+        const { subscription } = await loadUserSubscription(user);
+        subscriptionActive = subscription?.active ?? false;
+      }
+    }
+
+    if (subscriptionActive) {
+      const freeTier = await loadFreeTierForRequest(req, res, {
+        userId,
+        subscriptionActive: true,
+      });
+      return res.json({ ok: true, consumed: 1, ...freeTier });
+    }
+
+    const amount = Math.min(Math.max(Number(req.body?.count) || 1, 1), 5);
+    const identityKey = resolveFreeTierIdentity(req, res, userId);
+    const result = await consumeFreeTier(identityKey, amount);
+
+    if (!result.ok) {
+      return res.status(403).json(result);
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('Free tier consume error:', err);
+    res.status(500).json({ error: 'Failed to update free tier usage' });
+  }
 });
 
 app.post('/api/account/password', requireAuth, async (req, res) => {
@@ -758,12 +847,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
     return res.status(503).json({ error: 'Stripe not configured' });
   }
 
-  const { plan, returnTo } = req.body;
-  const priceId =
-    plan === 'annual' ? process.env.STRIPE_PRICE_ANNUAL : process.env.STRIPE_PRICE_MONTHLY;
+  const { returnTo } = req.body;
+  const priceId = process.env.STRIPE_PRICE_UNLOCK || process.env.STRIPE_PRICE_MONTHLY;
 
   if (!priceId) {
-    return res.status(503).json({ error: 'Stripe price IDs not configured' });
+    return res.status(503).json({ error: 'Stripe unlock price ID not configured' });
   }
 
   const returnPath = safeReturnPath(returnTo);
@@ -772,7 +860,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
   try {
     const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
+      mode: 'payment',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${siteUrl}${pagePath('create-account')}?session_id={CHECKOUT_SESSION_ID}&return_to=${returnQuery}`,
       cancel_url: `${siteUrl}${returnPath}${returnPath.includes('?') ? '&' : '?'}checkout=cancelled`,
@@ -825,7 +913,7 @@ app.get('/api/subscription/status', async (req, res) => {
   }
 
   try {
-    const active = await hasActiveSubscription(stripe, customerId);
+    const active = await hasPaidAccess(stripe, customerId);
     res.json({ active });
   } catch (err) {
     console.error('Subscription status error:', err);
@@ -894,7 +982,7 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
       const checks = await Promise.all(
         users
           .filter((u) => u.stripeCustomerId)
-          .map((u) => hasActiveSubscription(stripe, u.stripeCustomerId).catch(() => false))
+          .map((u) => hasPaidAccess(stripe, u.stripeCustomerId).catch(() => false))
       );
       activeSubscriptions = checks.filter(Boolean).length;
     }

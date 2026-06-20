@@ -21,6 +21,8 @@
     })
 </script>
 
+<link rel="stylesheet" href="/public/free-tier-banner.css">
+<script type="module" src="/public/free-tier-ui.js"></script>
 </head>
 <body>
 
@@ -36,6 +38,17 @@
     </div>
   </div>
 </nav>
+<div id="freeTierBanner" class="free-tier-banner" hidden>
+  <div class="wrap free-tier-banner-in">
+    <div class="free-tier-banner-copy">
+      <span class="free-tier-banner-eyebrow" id="freeTierBannerEyebrow">Daily free limit reached</span>
+      <span class="free-tier-banner-timer" id="freeTierBannerTimer" aria-live="polite">00:00:00</span>
+      <span class="free-tier-banner-sub" id="freeTierBannerSub">until your free conversions return</span>
+    </div>
+    <button type="button" class="free-tier-banner-cta" id="freeTierBannerCta">Unlock Now</button>
+  </div>
+</div>
+
 
 <main class="wrap panel wide">
   <div class="top-actions">
@@ -49,7 +62,7 @@
 
   <div class="account-grid">
     <div class="stat-card">
-      <h2>Subscription</h2>
+      <h2>Access</h2>
       <div id="subscription">
         <div class="stat-row"><span class="lab">Status</span><span class="val" id="subStatus">—</span></div>
         <div class="stat-row"><span class="lab">Plan</span><span class="val" id="subPlan">—</span></div>
@@ -63,7 +76,7 @@
         </div>
         <p class="sub-err" id="subErr" hidden></p>
       </div>
-      <p class="hint" id="subHint" style="margin-top:14px;font-size:12px;color:var(--faint)">Cancel anytime — you'll keep access until the end of your billing period.</p>
+      <p class="hint" id="subHint" style="margin-top:14px;font-size:12px;color:var(--faint)">Legacy subscriptions can be managed below. New purchases are one-time unlocks.</p>
     </div>
 
     <div class="stat-card">
@@ -118,6 +131,7 @@ const invoicesEl = document.getElementById('invoices');
 
 const DEFAULT_SUB_HINT =
   "Cancel anytime — you'll keep access until the end of your billing period.";
+const LIFETIME_SUB_HINT = 'You have unlimited conversions on this account.';
 
 function subscriptionStatusLabel(status) {
   switch (status) {
@@ -138,6 +152,18 @@ function subscriptionStatusLabel(status) {
 
 function renderSubscription(sub) {
   subErr.hidden = true;
+
+  if (sub?.active && sub.lifetime) {
+    subStatus.innerHTML = '<span class="badge active">Active</span>';
+    subPlan.textContent =
+      sub.plan + (sub.amount ? ` · ${formatMoney(sub.amount * 100, sub.currency)}` : '');
+    subRenews.textContent = 'One-time purchase';
+    subActions.hidden = true;
+    subNotice.hidden = true;
+    subHint.hidden = false;
+    subHint.textContent = LIFETIME_SUB_HINT;
+    return;
+  }
 
   if (sub?.active) {
     if (sub.cancelAtPeriodEnd) {
@@ -198,7 +224,7 @@ function renderSubscription(sub) {
         'Your latest renewal payment failed. Update your payment method to restore access.';
     } else {
       subHint.textContent =
-        'No active subscription was found for this account. If you recently paid, log out and back in.';
+        'No active unlock was found for this account. If you recently paid, log out and back in.';
     }
   }
 }

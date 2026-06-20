@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import {
   WAV_ROUTES,
   M4A_ROUTES,
+  MP4_ROUTES,
   AAC_ROUTES,
   MP3_ROUTES,
   OGG_ROUTES,
@@ -55,6 +56,12 @@ function stripHtmlUrls(html) {
 
 const posthogSnippet = fs.readFileSync(posthogSnippetPath, 'utf8');
 const faviconSnippet = fs.readFileSync(faviconSnippetPath, 'utf8');
+const freeTierBannerSnippet = fs.readFileSync(
+  path.join(root, 'templates/partials/free-tier-banner.html'),
+  'utf8'
+);
+const freeTierHeadSnippet =
+  '<link rel="stylesheet" href="/public/free-tier-banner.css">\n<script type="module" src="/public/free-tier-ui.js"></script>';
 
 function injectFavicon(html) {
   if (html.includes('{{FAVICON}}')) {
@@ -69,8 +76,19 @@ function injectFavicon(html) {
   );
 }
 
+function injectFreeTier(html) {
+  let out = html;
+  if (!out.includes('free-tier-banner.css')) {
+    out = out.replace('</head>', `${freeTierHeadSnippet}\n</head>`);
+  }
+  if (!out.includes('id="freeTierBanner"')) {
+    out = out.replace('</nav>', `</nav>\n${freeTierBannerSnippet}`);
+  }
+  return out;
+}
+
 function injectHeadExtras(html) {
-  return stripHtmlUrls(injectPosthog(injectFavicon(html)));
+  return injectFreeTier(stripHtmlUrls(injectPosthog(injectFavicon(html))));
 }
 
 function injectPosthog(html) {
@@ -125,6 +143,7 @@ function injectFormatCtas(template) {
   return template
     .replace('{{WAV_CTAS}}', formatCtasHtml('wav'))
     .replace('{{M4A_CTAS}}', formatCtasHtml('m4a'))
+    .replace('{{MP4_CTAS}}', formatCtasHtml('mp4'))
     .replace('{{AAC_CTAS}}', formatCtasHtml('aac'))
     .replace('{{MP3_CTAS}}', formatCtasHtml('mp3'))
     .replace('{{OGG_CTAS}}', formatCtasHtml('ogg'))
@@ -139,6 +158,7 @@ function buildConvertersPage(template) {
   const count =
     WAV_ROUTES.length +
     M4A_ROUTES.length +
+    MP4_ROUTES.length +
     AAC_ROUTES.length +
     MP3_ROUTES.length +
     OGG_ROUTES.length +
@@ -152,7 +172,7 @@ const convertTemplate = fs.readFileSync(convertTemplatePath, 'utf8');
 const homeTemplate = fs.readFileSync(homeTemplatePath, 'utf8');
 const convertersTemplate = fs.readFileSync(convertersTemplatePath, 'utf8');
 
-for (const route of [...WAV_ROUTES, ...M4A_ROUTES, ...AAC_ROUTES, ...MP3_ROUTES, ...OGG_ROUTES, ...WMA_ROUTES]) {
+for (const route of [...WAV_ROUTES, ...M4A_ROUTES, ...MP4_ROUTES, ...AAC_ROUTES, ...MP3_ROUTES, ...OGG_ROUTES, ...WMA_ROUTES]) {
   const outPath = path.join(root, `${route.inputSlug}-to-${route.slug}.html`);
   fs.writeFileSync(outPath, buildConvertPage(convertTemplate, route));
   console.log(`Wrote ${route.inputSlug}-to-${route.slug}.html`);

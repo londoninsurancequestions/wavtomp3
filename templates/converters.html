@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 {{FAVICON}}
 <title>All audio converters — YouConvert.com</title>
-<meta name="description" content="Browse every YouConvert audio converter — WAV, MP3, M4A, AAC, OGG, and WMA to any major format. Convert in your browser or on our servers.">
+<meta name="description" content="Browse every YouConvert audio converter — WAV, MP3, M4A, MP4, AAC, OGG, and WMA to any major format. Convert in your browser or on our servers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -135,7 +135,7 @@
 
 <div class="catalog" id="formats">
   <div class="catalog-in">
-    <div class="catalog-top"><b>{{CONVERTER_COUNT}} converters</b><span>AAC · M4A · MP3 · OGG · WAV · WMA</span></div>
+    <div class="catalog-top"><b>{{CONVERTER_COUNT}} converters</b><span>AAC · M4A · MP3 · MP4 · OGG · WAV · WMA</span></div>
     <div class="catalog-body">
       <h2 class="format-group-title" id="aac-formats">AAC converters</h2>
       <div class="format-grid" id="formats-aac" data-input="aac">
@@ -150,6 +150,11 @@
       <h2 class="format-group-title" id="mp3-formats">MP3 converters</h2>
       <div class="format-grid" id="formats-mp3" data-input="mp3">
       {{MP3_CTAS}}
+      </div>
+
+      <h2 class="format-group-title" id="mp4-formats">MP4 converters</h2>
+      <div class="format-grid" id="formats-mp4" data-input="mp4">
+      {{MP4_CTAS}}
       </div>
 
       <h2 class="format-group-title" id="ogg-formats">OGG converters</h2>

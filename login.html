@@ -21,6 +21,8 @@
     })
 </script>
 
+<link rel="stylesheet" href="/public/free-tier-banner.css">
+<script type="module" src="/public/free-tier-ui.js"></script>
 </head>
 <body>
 
@@ -33,11 +35,22 @@
     <a href="/create-account/" class="nav-link">Create account</a>
   </div>
 </nav>
+<div id="freeTierBanner" class="free-tier-banner" hidden>
+  <div class="wrap free-tier-banner-in">
+    <div class="free-tier-banner-copy">
+      <span class="free-tier-banner-eyebrow" id="freeTierBannerEyebrow">Daily free limit reached</span>
+      <span class="free-tier-banner-timer" id="freeTierBannerTimer" aria-live="polite">00:00:00</span>
+      <span class="free-tier-banner-sub" id="freeTierBannerSub">until your free conversions return</span>
+    </div>
+    <button type="button" class="free-tier-banner-cta" id="freeTierBannerCta">Unlock Now</button>
+  </div>
+</div>
+
 
 <main class="wrap panel">
   <div class="eyebrow">Welcome back</div>
   <h1>Log in to your account</h1>
-  <p class="lead">Access unlimited conversions, your subscription, and invoice history.</p>
+  <p class="lead">Access unlimited conversions, your unlock, and invoice history.</p>
 
   <div class="card">
     <div class="err" id="error" hidden></div>
@@ -112,7 +125,7 @@ form.addEventListener('submit', async (e) => {
         const alt = document.querySelector('.alt');
         if (alt) {
           alt.innerHTML =
-            `Set up your account: <a href="/create-account/?email=${email}">Create account with your subscription email</a>`;
+            `Set up your account: <a href="/create-account/?email=${email}">Create account with your payment email</a>`;
         }
       } else if (res.status === 401) {
         const email = encodeURIComponent(document.getElementById('email').value.trim());
