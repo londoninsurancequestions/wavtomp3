@@ -954,7 +954,7 @@ async function getPreviewClipBlob(item) {
       await ff.exec(trimArgs());
     }
     const output = await ff.readFile(outFile);
-    item.previewClipBlob = new Blob([output.buffer], { type: outputFormat.mime });
+    item.previewClipBlob = new Blob([output], { type: outputFormat.mime });
     return item.previewClipBlob;
   } finally {
     try {
@@ -1163,7 +1163,9 @@ function buildFfmpegArgs(opts, duration) {
     }
   }
 
-  if (outputFormat.container) args.push('-movflags', '+faststart');
+  // Skip -movflags +faststart in browser WASM — the second-pass moov relocation
+  // can produce empty M4A/M4R/MP4 outputs in ffmpeg.wasm's in-memory filesystem.
+  if (outputFormat.container) args.push('-f', 'mp4');
 
   if (opts.title) args.push('-metadata', `title=${opts.title}`);
   if (opts.artist) args.push('-metadata', `artist=${opts.artist}`);
@@ -1192,7 +1194,7 @@ async function convertLocal(item, opts, onProgress) {
   await ff.deleteFile(inputName);
   await ff.deleteFile(outFile);
 
-  const blob = new Blob([output.buffer], { type: outputFormat.mime });
+  const blob = new Blob([output], { type: outputFormat.mime });
   return blob;
 }
 
