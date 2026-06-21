@@ -23,6 +23,16 @@
 
 <link rel="stylesheet" href="/public/free-tier-banner.css">
 <script type="module" src="/public/free-tier-ui.js"></script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M4CENLE5VL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-M4CENLE5VL');
+</script>
+
 </head>
 <body>
 
@@ -83,6 +93,7 @@
 
 <script type="module">
 import { showError, setLoading } from '/public/auth.js';
+import { trackPurchaseConversion } from '/public/google-analytics.js';
 import {
   loadPendingCheckout,
   postAuthRedirectUrl,
@@ -132,6 +143,7 @@ async function init() {
       if (data.valid) {
         showError(errorEl, '');
         paidBanner.hidden = false;
+        trackPurchaseConversion(sessionId);
         if (data.email) emailInput.value = data.email;
       } else if (data.error) {
         showError(errorEl, data.error);

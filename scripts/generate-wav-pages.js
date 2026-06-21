@@ -24,6 +24,7 @@ const testimonialsTemplatePath = path.join(root, 'templates/testimonials.html');
 const termsTemplatePath = path.join(root, 'templates/terms.html');
 const privacyTemplatePath = path.join(root, 'templates/privacy.html');
 const posthogSnippetPath = path.join(root, 'templates/partials/posthog-snippet.html');
+const googleTagSnippetPath = path.join(root, 'templates/partials/google-tag-snippet.html');
 const faviconSnippetPath = path.join(root, 'templates/partials/favicon.html');
 
 const STANDALONE_PAGES = [
@@ -55,6 +56,7 @@ function stripHtmlUrls(html) {
 }
 
 const posthogSnippet = fs.readFileSync(posthogSnippetPath, 'utf8');
+const googleTagSnippet = fs.readFileSync(googleTagSnippetPath, 'utf8');
 const faviconSnippet = fs.readFileSync(faviconSnippetPath, 'utf8');
 const freeTierBannerSnippet = fs.readFileSync(
   path.join(root, 'templates/partials/free-tier-banner.html'),
@@ -88,7 +90,17 @@ function injectFreeTier(html) {
 }
 
 function injectHeadExtras(html) {
-  return injectFreeTier(stripHtmlUrls(injectPosthog(injectFavicon(html))));
+  return injectFreeTier(stripHtmlUrls(injectGoogleTag(injectPosthog(injectFavicon(html)))));
+}
+
+function injectGoogleTag(html) {
+  if (html.includes('{{GOOGLE_TAG_SNIPPET}}')) {
+    return html.replace('{{GOOGLE_TAG_SNIPPET}}', googleTagSnippet);
+  }
+  if (html.includes('googletagmanager.com/gtag/js')) {
+    return html;
+  }
+  return html.replace('</head>', `${googleTagSnippet}\n</head>`);
 }
 
 function injectPosthog(html) {
