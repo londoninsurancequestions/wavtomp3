@@ -49,7 +49,7 @@ function isQuotaExhausted() {
 }
 
 function bannerCopy() {
-  const limit = state.freeTier?.limit ?? 5;
+  const limit = state.freeTier?.limit ?? 2;
   return {
     eyebrow: 'Daily free limit reached',
     sub: `until your ${limit} free conversions return`,
@@ -57,7 +57,7 @@ function bannerCopy() {
 }
 
 function modalCopy() {
-  const limit = state.freeTier?.limit ?? 5;
+  const limit = state.freeTier?.limit ?? 2;
   return {
     label: 'Your free conversions return in',
     sub: `You've used all ${limit} free full exports for today. Unlock now for unlimited conversions — no waiting.`,

@@ -39,9 +39,9 @@ let subscriptionActive = false;
 let currentUser = null;
 let freeTier = {
   unlimited: false,
-  limit: 5,
+  limit: 2,
   used: 0,
-  remaining: 5,
+  remaining: 2,
   resetsAt: null,
 };
 
