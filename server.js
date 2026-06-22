@@ -366,8 +366,6 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.post('/api/auth/reset-password', async (req, res) => {
-  if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
-
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and new password are required' });
@@ -377,9 +375,31 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const user = await findUserByEmail(normalizedEmail);
+  const adminAccount = isAdminEmail(normalizedEmail);
+  let user = await findUserByEmail(normalizedEmail);
 
   if (!user) {
+    if (adminAccount) {
+      try {
+        const passwordHash = await hashPassword(password);
+        user = await createUser(normalizedEmail, passwordHash, null);
+        const token = signToken(user);
+        setAuthCookie(res, token);
+        return res.json({
+          ok: true,
+          user: publicUser(user),
+          subscriptionActive: false,
+        });
+      } catch (err) {
+        console.error('Admin account setup error:', err);
+        return res.status(500).json({ error: 'Could not create admin account' });
+      }
+    }
+
+    if (!stripe) {
+      return res.status(404).json({ error: 'No account found for this email.' });
+    }
+
     try {
       const match = await findStripeCustomerByEmail(stripe, normalizedEmail);
       if (match && !(await findUserByStripeCustomerId(match.customerId))) {
@@ -398,19 +418,29 @@ app.post('/api/auth/reset-password', async (req, res) => {
   try {
     let subscriptionActive = false;
 
-    if (user.unlocked_at) {
-      subscriptionActive = true;
-    } else if (user.stripe_customer_id) {
-      subscriptionActive = await hasPaidAccess(stripe, user.stripe_customer_id);
-    }
-    if (!subscriptionActive) {
-      const match = await findStripeCustomerByEmail(stripe, normalizedEmail);
-      subscriptionActive = !!match;
-    }
+    if (!adminAccount) {
+      if (!stripe) {
+        return res.status(503).json({ error: 'Stripe not configured' });
+      }
 
-    if (!subscriptionActive) {
-      return res.status(403).json({
-        error: 'No active unlock found for this email. Reset is only available for paying customers.',
+      if (user.unlocked_at) {
+        subscriptionActive = true;
+      } else if (user.stripe_customer_id) {
+        subscriptionActive = await hasPaidAccess(stripe, user.stripe_customer_id);
+      }
+      if (!subscriptionActive) {
+        const match = await findStripeCustomerByEmail(stripe, normalizedEmail);
+        subscriptionActive = !!match;
+      }
+
+      if (!subscriptionActive) {
+        return res.status(403).json({
+          error: 'No active unlock found for this email. Reset is only available for paying customers.',
+        });
+      }
+    } else if (stripe && user.stripe_customer_id) {
+      subscriptionActive = await hasPaidAccess(stripe, user.stripe_customer_id, {
+        unlockedAt: user.unlocked_at,
       });
     }
 
@@ -423,7 +453,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     res.json({
       ok: true,
       user: publicUser(user),
-      subscriptionActive: true,
+      subscriptionActive,
     });
   } catch (err) {
     console.error('Password reset error:', err);
