@@ -165,3 +165,13 @@ h1{font-family:var(--display);font-weight:800;font-size:clamp(32px,5vw,44px);let
 .btn-ghost{background:var(--bg);color:var(--muted);border:1px solid var(--line);font-weight:600;font-size:13px;
   padding:10px 16px;border-radius:10px;cursor:pointer}
 .btn-ghost:hover{color:var(--text);border-color:var(--line-strong)}
+.funnel-steps{display:flex;flex-direction:column;gap:14px}
+.funnel-step{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--bg)}
+.funnel-step-head{display:flex;align-items:center;gap:14px}
+.funnel-step-num{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;
+  font-family:var(--mono);font-size:12px;font-weight:700;color:var(--signal);background:var(--amber-dim);flex-shrink:0}
+.funnel-step-label{font-family:var(--display);font-size:17px;font-weight:700}
+.funnel-step-meta{display:flex;gap:12px;margin-top:4px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.funnel-step-count{margin-left:auto;font-family:var(--display);font-size:28px;font-weight:800;line-height:1}
+.funnel-bar-track{height:8px;border-radius:999px;background:var(--surface);margin-top:12px;overflow:hidden}
+.funnel-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--signal),var(--signal-2));min-width:0}

@@ -37,6 +37,7 @@ const STANDALONE_PAGES = [
   'pdf-to-epub.html',
   'pdf-to-epub-publishing.html',
   'xc-9f4e2a7b.html',
+  'statisticals.html',
 ];
 
 function stripHtmlUrls(html) {
@@ -64,6 +65,7 @@ const freeTierBannerSnippet = fs.readFileSync(
 );
 const freeTierHeadSnippet =
   '<link rel="stylesheet" href="/public/free-tier-banner.css">\n<script type="module" src="/public/free-tier-ui.js"></script>';
+const funnelTrackSnippet = '<script type="module" src="/public/funnel-track.js"></script>';
 
 function injectFavicon(html) {
   if (html.includes('{{FAVICON}}')) {
@@ -90,7 +92,12 @@ function injectFreeTier(html) {
 }
 
 function injectHeadExtras(html) {
-  return injectFreeTier(stripHtmlUrls(injectGoogleTag(injectPosthog(injectFavicon(html)))));
+  return injectFunnelTrack(injectFreeTier(stripHtmlUrls(injectGoogleTag(injectPosthog(injectFavicon(html))))));
+}
+
+function injectFunnelTrack(html) {
+  if (html.includes('funnel-track.js')) return html;
+  return html.replace('</head>', `${funnelTrackSnippet}\n</head>`);
 }
 
 function injectGoogleTag(html) {

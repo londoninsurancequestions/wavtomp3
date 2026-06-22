@@ -70,6 +70,10 @@ import {
   resolveFreeTierIdentity,
 } from './lib/free-tier.js';
 import { convertPdfToEpub } from './lib/ebook-convert.js';
+import {
+  logFunnelEvent,
+  getFunnelStats,
+} from './lib/funnel-analytics.js';
 import { cleanUrlMiddleware } from './lib/clean-urls.js';
 import { pagePath } from './lib/page-paths.js';
 
@@ -300,6 +304,12 @@ app.post('/api/auth/register', async (req, res) => {
 
     const token = signToken(user);
     setAuthCookie(res, token);
+
+    try {
+      await logFunnelEvent(req, res, 'paid_signup', { userId: user.id });
+    } catch (err) {
+      console.error('Funnel paid_signup error:', err.message);
+    }
 
     res.json({
       user: publicUser(user),
@@ -868,6 +878,19 @@ app.post('/api/create-checkout-session', async (req, res) => {
       cancel_url: `${siteUrl}${returnPath}${returnPath.includes('?') ? '&' : '?'}checkout=cancelled`,
       allow_promotion_codes: true,
     });
+
+    try {
+      let userId = null;
+      const token = req.cookies?.wavtomp3_token;
+      if (token) {
+        const payload = verifyToken(token);
+        if (payload) userId = payload.sub;
+      }
+      await logFunnelEvent(req, res, 'stripe_checkout', { userId });
+    } catch (err) {
+      console.error('Funnel stripe_checkout error:', err.message);
+    }
+
     res.json({ url: session.url });
   } catch (err) {
     console.error('Stripe checkout error:', err);
@@ -961,6 +984,11 @@ app.post('/api/events/conversion', async (req, res) => {
       duration: duration ? Number(duration) : null,
       savedToLibrary: !!savedToLibrary,
     });
+    try {
+      await logFunnelEvent(req, res, 'conversion', { userId });
+    } catch (err) {
+      console.error('Funnel conversion error:', err.message);
+    }
     res.json({ ok: true });
   } catch (err) {
     console.error('Conversion event error:', err);
@@ -968,9 +996,48 @@ app.post('/api/events/conversion', async (req, res) => {
   }
 });
 
+const CLIENT_FUNNEL_EVENTS = new Set(['visit', 'limit_modal_shown', 'modal_closed']);
+
+app.post('/api/events/funnel', async (req, res) => {
+  const { event } = req.body || {};
+  if (!CLIENT_FUNNEL_EVENTS.has(event)) {
+    return res.status(400).json({ error: 'Invalid event' });
+  }
+
+  let userId = null;
+  const token = req.cookies?.wavtomp3_token;
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload) userId = payload.sub;
+  }
+
+  try {
+    await logFunnelEvent(req, res, event, { userId });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Funnel event error:', err);
+    res.status(500).json({ error: 'Failed to log event' });
+  }
+});
+
 /* ---------- Admin ---------- */
 app.get('/api/admin/me', requireAuth, (req, res) => {
   res.json({ admin: isAdminEmail(req.userEmail) });
+});
+
+app.get('/api/admin/funnel-stats', requireAuth, requireAdmin, async (req, res) => {
+  const period = String(req.query.period || 'all');
+  const allowed = new Set(['all', 'today', '7d', '30d']);
+  if (!allowed.has(period)) {
+    return res.status(400).json({ error: 'Invalid period' });
+  }
+
+  try {
+    res.json(await getFunnelStats({ period }));
+  } catch (err) {
+    console.error('Funnel stats error:', err);
+    res.status(500).json({ error: 'Failed to load funnel stats' });
+  }
 });
 
 app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {

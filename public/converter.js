@@ -17,6 +17,7 @@ import {
   ALL_INPUT_ACCEPT,
 } from '/public/conversion-formats.js';
 import { modalTestimonialsHtml } from '/public/testimonials.js';
+import { trackFunnelEvent } from '/public/funnel-events.js';
 
 const inputSlug = document.documentElement.dataset.inputFormat || 'wav';
 const outputSlug = document.documentElement.dataset.outputFormat || 'mp3';
@@ -1618,12 +1619,17 @@ window.openUnlockModal = function openUnlockModal(target) {
   updateModalPreviewButton();
   document.getElementById('redirecting').classList.remove('show');
   document.getElementById('overlay').classList.add('show');
+  if (freeTierExhausted()) {
+    trackFunnelEvent('limit_modal_shown');
+  }
   window.refreshUnlockModalUrgency?.();
   dispatchFreeTierUpdate();
 };
 
 window.closeModal = function closeModal() {
+  const wasOpen = document.getElementById('overlay')?.classList.contains('show');
   document.getElementById('overlay').classList.remove('show');
+  if (wasOpen) trackFunnelEvent('modal_closed');
 };
 
 function scrollToPreview() {
